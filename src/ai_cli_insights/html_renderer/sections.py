@@ -594,9 +594,29 @@ def render_llm_analysis(llm_analysis: dict | None) -> str:
             f"<tbody>{error_rows}</tbody></table>"
         )
 
-    insights = "".join(f"<li>{html.escape(item)}</li>" for item in llm_analysis.get("insights", []))
+    raw_insights = [str(item).strip() for item in llm_analysis.get("insights", []) if str(item).strip()]
+    raw_risks = [str(item).strip() for item in llm_analysis.get("risks", []) if str(item).strip()]
+    risk_markers = (
+        "风险", "不足", "缺失", "偏", "不稳", "不够", "薄弱", "返工", "漂移", "阻碍", "单一", "依赖",
+        "cannot", "lack", "insufficient", "risk", "bottleneck", "single",
+    )
+    positive_insights: list[str] = []
+    risk_insights: list[str] = []
+    for text in raw_insights:
+        lowered = text.lower()
+        if any(marker in text for marker in risk_markers) or any(marker in lowered for marker in risk_markers):
+            risk_insights.append(text)
+        else:
+            positive_insights.append(text)
+    if not positive_insights and raw_insights:
+        positive_insights = raw_insights[:1]
+        risk_insights = raw_insights[1:] + raw_risks
+    else:
+        risk_insights = risk_insights + raw_risks
+
+    pos_html = "".join(f"<li>{html.escape(item)}</li>" for item in positive_insights)
+    risk_html = "".join(f"<li>{html.escape(item)}</li>" for item in risk_insights)
     actions = "".join(f"<li>{html.escape(item)}</li>" for item in llm_analysis.get("actions", []))
-    risks = "".join(f"<li>{html.escape(item)}</li>" for item in llm_analysis.get("risks", []))
     provider = html.escape(llm_analysis.get("provider", ""))
     model = html.escape(llm_analysis.get("model", "")) if llm_analysis.get("model") else "default"
     generated_at = html.escape(llm_analysis.get("generated_at", ""))
@@ -608,10 +628,12 @@ def render_llm_analysis(llm_analysis: dict | None) -> str:
         f"<div class='snapshot-card'><strong>提供方</strong><span>{provider}</span><span>模型: {model}</span><span>{generated_at}</span></div>"
         "</div>"
         "<div class='charts-row'>"
-        f"<div class='chart-card'>{block_title_html('关键洞察', 'llm_insights', 'chart-title')}<ul class='mini-list'>{insights or '<li>暂无</li>'}</ul></div>"
+        f"<div class='chart-card'>{block_title_html('正向信号', 'llm_insights', 'chart-title')}<ul class='mini-list'>{pos_html or '<li>暂无</li>'}</ul></div>"
+        f"<div class='chart-card'>{block_title_html('风险信号', 'llm_risks', 'chart-title')}<ul class='mini-list'>{risk_html or '<li>暂无</li>'}</ul></div>"
+        "</div>"
+        "<div class='charts-row'>"
         f"<div class='chart-card'>{block_title_html('建议动作', 'llm_actions', 'chart-title')}<ul class='mini-list'>{actions or '<li>暂无</li>'}</ul></div>"
         "</div>"
-        f"<div class='project-area'><div class='area-header'><span class='area-name'>主要风险</span></div><ul class='mini-list'>{risks or '<li>暂无</li>'}</ul></div>"
     )
 
 
