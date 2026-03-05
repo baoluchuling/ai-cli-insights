@@ -536,6 +536,26 @@ def render_trend_cards(trend_cards: list[dict]) -> str:
     return f"{heading_html('h2', 'Key Trends', 'trends', 'section-trends')}<div class=\"trend-grid\">" + "".join(cards) + "</div>"
 
 
+def render_operational_signals(cards: list[dict]) -> str:
+    body = "".join(
+        (
+            '<div class="snapshot-card">'
+            f'<strong>{html.escape(card.get("title", ""))}</strong>'
+            f'<span>{html.escape(card.get("summary", ""))}</span>'
+            '<ul class="mini-list">'
+            + "".join(f"<li>{html.escape(item)}</li>" for item in (card.get("bullets") or []))
+            + "</ul>"
+            "</div>"
+        )
+        for card in cards
+    ) or '<div class="snapshot-card"><strong>Operational Signals</strong><span>暂无数据</span></div>'
+    return (
+        f"{heading_html('h2', 'Operational Signals', 'operational', 'section-operational')}"
+        '<p class="section-intro">这三项用于看流程运营面：成本压力、目标漂移信号、资产化机会。</p>'
+        f'<div class="snapshot-grid">{body}</div>'
+    )
+
+
 def render_recommendations(cards: list[dict], variant: str = "all") -> str:
     copy = _mode_copy(variant)
     return (

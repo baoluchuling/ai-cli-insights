@@ -18,6 +18,7 @@ from .sections import (
     render_horizon_cards,
     render_leaderboards,
     render_llm_analysis,
+    render_operational_signals,
     render_project_drilldown,
     render_prompt_library,
     render_quality_score,
@@ -55,6 +56,7 @@ def render_single_platform_block(section: PlatformSection, anchor_prefix: str = 
     usage_block_html = render_usage_block(section.narrative)
     snapshot_html = scope_section_ids(render_snapshot_compare(section.extras.snapshot_compare), anchor_prefix)
     trend_html = scope_section_ids(render_trend_cards(section.extras.trend_cards), anchor_prefix)
+    operational_html = scope_section_ids(render_operational_signals(section.extras.operational_signals), anchor_prefix)
     recommendation_html = scope_section_ids(render_recommendations(section.extras.platform_recommendations, section.meta.tool), anchor_prefix)
     quality_html = scope_section_ids(render_quality_score(section.extras.quality_score), anchor_prefix)
     drilldown_html = scope_section_ids(render_project_drilldown(section.extras.project_drilldown, section.meta.tool), anchor_prefix)
@@ -80,6 +82,7 @@ def render_single_platform_block(section: PlatformSection, anchor_prefix: str = 
         f"{quality_html}"
         f"{snapshot_html}"
         f"{trend_html}"
+        f"{operational_html}"
         f"{recommendation_html}"
         f"{llm_analysis_html}"
         f"{heading_html('h3', 'What You Work On', 'work', anchor('work'))}"
@@ -147,6 +150,7 @@ def render_html(
     first_chart_row, second_chart_row = render_chart_rows(data, meta)
     snapshot_html = render_snapshot_compare(extras.snapshot_compare)
     trend_html = render_trend_cards(extras.trend_cards)
+    operational_html = render_operational_signals(extras.operational_signals)
     recommendation_html = render_recommendations(extras.platform_recommendations, meta.tool)
     quality_html = render_quality_score(extras.quality_score)
     drilldown_html = render_project_drilldown(extras.project_drilldown, meta.tool)
@@ -200,6 +204,7 @@ def render_html(
             '<a href="#section-quality">Quality</a>'
             '<a href="#section-snapshot">Snapshot</a>'
             '<a href="#section-trends">Trends</a>'
+            '<a href="#section-operational">Signals</a>'
             '<a href="#section-recommendations">Recommendations</a>'
             '<a href="#section-llm">LLM</a>'
             '<a href="#work">What You Work On</a>'
@@ -269,6 +274,7 @@ def render_html(
               <a href="#section-quality">Quality</a>
               <a href="#section-snapshot">Snapshot</a>
               <a href="#section-trends">Trends</a>
+              <a href="#section-operational">Signals</a>
               <a href="#section-recommendations">Recommendations</a>
               <a href="#section-llm">LLM</a>
               <a href="#section-work">What You Work On</a>
@@ -290,6 +296,7 @@ def render_html(
             {quality_html}
             {snapshot_html}
             {trend_html}
+            {operational_html}
             {recommendation_html}
             {llm_analysis_html}
             {heading_html('h2', 'What You Work On', 'work', 'section-work')}

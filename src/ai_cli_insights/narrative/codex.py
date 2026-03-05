@@ -10,6 +10,16 @@ def _fmt_top(items: list, n: int = 3) -> str:
     return ", ".join(f"{name}({value})" for name, value in items[:n])
 
 
+def _execution_tone(sessions: int, long_chain: int) -> str:
+    if sessions == 0:
+        return "这块没法夸：本期没有 Codex 执行样本。"
+    if sessions >= 6 and long_chain >= 1:
+        return "执行强度值得夸，推进力明显在线。"
+    if sessions >= 3:
+        return "执行节奏合格，但还没到高强度稳定区。"
+    return "执行样本偏少，结论暂时只能保守解读。"
+
+
 def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBundle:
     codex = data.comparison.get("codex_cli", {})
     sessions = codex.get("sessions", 0)
@@ -20,18 +30,19 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     top_tools = _fmt_top(codex.get("top_tools", []))
     top_projects = _fmt_top(codex.get("top_projects", []))
     long_chain = len([s for s in data.sessions if s.get("active_minutes", 0) >= 120])
+    execution_tone = _execution_tone(sessions, long_chain)
 
     usage_narrative = {
         "p1": f"最近窗口中 Codex 有 {sessions} 个 sessions，平均 {avg_min} 分钟、每个 session {avg_msg} 条用户消息。",
         "p2": f"任务主要集中在 {top_domains}。工具分布 Top 为 {top_tools}，项目分布 Top 为 {top_projects}。",
-        "p3": f"执行画像为 {archetype}。其中长链路会话（active>=120 分钟）共 {long_chain} 个。",
-        "key": f"当前 Codex 的主要价值是执行推进；关键改进点是把 {sessions} 个 sessions 的阶段回放做得更稳定。",
+        "p3": f"执行画像为 {archetype}。其中长链路会话（active>=120 分钟）共 {long_chain} 个。{execution_tone}",
+        "key": f"{execution_tone} 关键改进点是把 {sessions} 个 sessions 的阶段回放做得更稳定。",
     }
 
     wins = [
-        {"title": "执行强度", "desc": f"{sessions} 个 sessions，平均时长 {avg_min} 分钟，说明执行层使用稳定。"},
-        {"title": "工具集中度", "desc": f"Top tools: {top_tools}。工具调用集中，适合继续沉淀固定 runbook。"},
-        {"title": "任务聚焦", "desc": f"Top domains: {top_domains}；Top projects: {top_projects}。当前优化目标足够明确。"},
+        {"title": "执行强度", "desc": f"{sessions} 个 sessions，平均时长 {avg_min} 分钟。{execution_tone}"},
+        {"title": "工具集中度", "desc": f"Top tools: {top_tools}。这点值得夸，runbook 沉淀基础已经有了。"},
+        {"title": "任务聚焦", "desc": f"Top domains: {top_domains}；Top projects: {top_projects}。方向是清楚的，但仍要防止跨 repo 上下文混线。"},
     ]
 
     friction_cards = [

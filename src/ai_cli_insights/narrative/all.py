@@ -10,6 +10,15 @@ def _fmt_top(items: list, n: int = 3) -> str:
     return ", ".join(f"{name}({value})" for name, value in items[:n])
 
 
+def _split_tone(c_sessions: int, x_sessions: int) -> str:
+    if c_sessions == 0 or x_sessions == 0:
+        return "这块要吐槽：双工具分工是单腿走路，另一侧样本缺失会直接拉低判断可信度。"
+    gap = abs(c_sessions - x_sessions)
+    if gap <= max(2, int((c_sessions + x_sessions) * 0.25)):
+        return "这块值得夸：双侧参与度平衡，分工结构是健康的。"
+    return "分工方向是对的，但负载明显偏斜，建议把轻侧角色拉回到稳定节奏。"
+
+
 def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBundle:
     claude = data.comparison.get("claude_code", {})
     codex = data.comparison.get("codex_cli", {})
@@ -27,6 +36,7 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     codex_tools = _fmt_top(codex.get("top_tools", []))
     claude_projects = _fmt_top(claude.get("top_projects", []))
     codex_projects = _fmt_top(codex.get("top_projects", []))
+    split_tone = _split_tone(c_sessions, x_sessions)
 
     usage_narrative = {
         "p1": (
@@ -39,23 +49,23 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
         ),
         "p3": (
             f"Outcome 汇总：fully/mostly={achieved}，partially/not={not_achieved}；"
-            f"当前主要摩擦：{friction_line}。"
+            f"当前主要摩擦：{friction_line}。{split_tone}"
         ),
-        "key": "当前协作模式是“Claude 偏分析、Codex 偏执行”；优化重点是交接质量和验证门禁。",
+        "key": f"{split_tone} 优化重点是交接质量和验证门禁。",
     }
 
     wins = [
         {
             "title": "分工清晰",
-            "desc": f"Claude 与 Codex 的时长/消息密度差异明显，角色边界清楚。",
+            "desc": f"Claude 与 Codex 的时长/消息密度差异明显。{split_tone}",
         },
         {
             "title": "任务聚焦",
-            "desc": f"Top domains: {top_domains}；高效样本集中在 {efficient_domains}。",
+            "desc": f"Top domains: {top_domains}；高效样本集中在 {efficient_domains}。这块可以夸，说明你在把精力投到高价值区。",
         },
         {
             "title": "协作基础稳定",
-            "desc": f"Claude Top projects: {claude_projects}；Codex Top projects: {codex_projects}。",
+            "desc": f"Claude Top projects: {claude_projects}；Codex Top projects: {codex_projects}。但如果一侧长期为 0，要优先修复。",
         },
     ]
 

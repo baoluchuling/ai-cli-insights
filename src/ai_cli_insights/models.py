@@ -59,6 +59,7 @@ class NarrativeBundle:
 class ReportExtras:
     snapshot_compare: dict
     trend_cards: list[dict]
+    operational_signals: list[dict]
     platform_recommendations: list[dict]
     project_drilldown: list[dict]
     leaderboards: list[dict]

@@ -69,14 +69,29 @@ def _apply_llm_result(narrative: NarrativeBundle, extras: ReportExtras, llm_anal
     return True
 
 
+def _effective_tool(requested_tool: str, raw: dict) -> str:
+    if requested_tool != "all":
+        return requested_tool
+    stats = raw.get("stats", {}).get("sources", {})
+    active = []
+    if (stats.get("claude_code") or {}).get("sessions", 0) > 0:
+        active.append("claude")
+    if (stats.get("codex_cli") or {}).get("sessions", 0) > 0:
+        active.append("codex")
+    if len(active) == 1:
+        return active[0]
+    return "all"
+
+
 def cmd_generate(args: argparse.Namespace) -> None:
     raw = run_collect(args.days, args.tool)
+    effective_tool = _effective_tool(args.tool, raw)
     analyst_label = "Claude" if args.analyst == "claude" else "GPT (Codex CLI)"
-    meta = make_report_meta(args.tool, analyst_label=analyst_label)
+    meta = make_report_meta(effective_tool, analyst_label=analyst_label)
     out = Path(args.output_dir)
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data = analyze(raw)
-    period_comparison = build_period_comparison(args.days, args.tool)
+    period_comparison = build_period_comparison(args.days, effective_tool)
     narrative = build_narrative_bundle(data, meta)
     project_cards = build_project_area_cards(data, meta)
     previous_snapshot = load_previous_snapshot(out, meta)
@@ -93,7 +108,7 @@ def cmd_generate(args: argparse.Namespace) -> None:
     extras.llm_analysis = llm_analysis
     llm_applied = _apply_llm_result(narrative, extras, llm_analysis)
     platform_sections: dict[str, PlatformSection] = {}
-    if args.tool == "all":
+    if effective_tool == "all":
         for tool_name, source in (("claude", "claude_code"), ("codex", "codex_cli")):
             sub_meta = make_report_meta(tool_name, analyst_label=analyst_label)
             sub_data = analyze(subset_raw_by_source(raw, source))

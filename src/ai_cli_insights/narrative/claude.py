@@ -10,6 +10,26 @@ def _fmt_top(items: list, n: int = 3) -> str:
     return ", ".join(f"{name}({value})" for name, value in items[:n])
 
 
+def _session_tone(sessions: int) -> str:
+    if sessions == 0:
+        return "这块得直说：Claude 本期几乎没上场，分析层是空档状态。"
+    if sessions < 3:
+        return "有在用，但投入偏少，分析层还没形成稳定惯性。"
+    return "分析层参与度不错，这段可以夸：你在收敛问题上是有持续投入的。"
+
+
+def _outcome_tone(achieved: int, not_achieved: int) -> str:
+    total = achieved + not_achieved
+    if total <= 0:
+        return "结果标注还不完整，复盘证据偏薄，建议先补齐 outcome。"
+    ratio = achieved / total
+    if ratio >= 0.7:
+        return "结果面值得肯定：完成率在可夸区间。"
+    if ratio >= 0.4:
+        return "结果面中规中矩：有交付，但稳定性还不够硬。"
+    return "这块要吐槽：未达成占比偏高，说明分析质量没有稳定转化为结果。"
+
+
 def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBundle:
     claude = data.comparison.get("claude_code", {})
     sessions = claude.get("sessions", 0)
@@ -20,18 +40,20 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     top_projects = _fmt_top(claude.get("top_projects", []))
     friction_line = friction_text(data, n=3, sep=", ")
     achieved, not_achieved = achieved_counts(data)
+    session_tone = _session_tone(sessions)
+    outcome_tone = _outcome_tone(achieved, not_achieved)
 
     usage_narrative = {
         "p1": f"最近窗口中 Claude 有 {sessions} 个 sessions，平均 {avg_min} 分钟、每个 session {avg_msg} 条用户消息。",
         "p2": f"任务主要集中在 {top_domains}。工具分布 Top 为 {top_tools}，项目分布 Top 为 {top_projects}。",
-        "p3": f"Outcome 汇总：fully/mostly={achieved}，partially/not={not_achieved}。主要摩擦：{friction_line}。",
-        "key": "Claude 当前主要承担分析与收敛；提升点在于先证据后结论，减少偏航摩擦。",
+        "p3": f"Outcome 汇总：fully/mostly={achieved}，partially/not={not_achieved}。主要摩擦：{friction_line}。{outcome_tone}",
+        "key": f"{session_tone} 重点改进是先证据后结论，减少偏航摩擦。",
     }
 
     wins = [
-        {"title": "分析层稳定", "desc": f"{sessions} 个 sessions 的使用结构清晰，平均时长 {avg_min} 分钟。"},
-        {"title": "任务聚焦", "desc": f"Top domains: {top_domains}；Top projects: {top_projects}。"},
-        {"title": "可量化质量", "desc": f"Outcome 可见：achieved={achieved}，not_achieved={not_achieved}。"},
+        {"title": "分析层投入", "desc": f"{sessions} 个 sessions，平均时长 {avg_min} 分钟。{session_tone}"},
+        {"title": "任务聚焦度", "desc": f"Top domains: {top_domains}；Top projects: {top_projects}。这块聚焦做得比较清楚。"},
+        {"title": "结果转化率", "desc": f"Outcome：achieved={achieved}，not_achieved={not_achieved}。{outcome_tone}"},
     ]
 
     top_sessions = data.friction_sessions[:3]

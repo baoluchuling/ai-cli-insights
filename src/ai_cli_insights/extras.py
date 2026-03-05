@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import Counter, defaultdict
 
 from .analytics import infer_domain, infer_project, normalize_text, parse_session_dt, source_label
@@ -232,6 +233,226 @@ def build_task_matrix(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
     ]
 
 
+def _selected_sessions(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
+    if meta.tool == "all":
+        return list(data.sessions)
+    source = meta.primary_source or ""
+    return [session for session in data.sessions if session.get("source") == source]
+
+
+def _token_count(session: dict) -> int:
+    direct = session.get("tokens_used", 0) or 0
+    if direct:
+        return int(direct)
+    return int((session.get("input_tokens", 0) or 0) + (session.get("output_tokens", 0) or 0))
+
+
+def _approx_unit_cost_per_1k(source: str) -> float:
+    # Coarse default for relative budgeting only.
+    if source == "claude_code":
+        return 0.015
+    if source == "codex_cli":
+        return 0.010
+    return 0.012
+
+
+def _build_cost_signal(data: AnalyzedData, meta: ReportMeta) -> dict:
+    sessions = _selected_sessions(data, meta)
+    by_source: dict[str, dict[str, float]] = defaultdict(lambda: {"sessions": 0, "tokens": 0})
+    total_tokens = 0
+    total_estimated_cost = 0.0
+    for session in sessions:
+        source = session.get("source") or "unknown"
+        tokens = _token_count(session)
+        by_source[source]["sessions"] += 1
+        by_source[source]["tokens"] += tokens
+        total_tokens += tokens
+        total_estimated_cost += (tokens / 1000.0) * _approx_unit_cost_per_1k(source)
+    bullets = []
+    for source, item in sorted(by_source.items(), key=lambda pair: pair[1]["tokens"], reverse=True):
+        s_count = int(item["sessions"])
+        t_count = int(item["tokens"])
+        avg_tokens = round(t_count / s_count) if s_count else 0
+        est_cost = round((t_count / 1000.0) * _approx_unit_cost_per_1k(source), 2)
+        bullets.append(
+            f"{source_label(source)}: {t_count:,} tokens（均值 {avg_tokens:,}/session），估算成本 ${est_cost}"
+        )
+    if not bullets:
+        bullets.append("暂无 token 数据，无法计算成本。")
+    summary = (
+        f"本窗口累计 {total_tokens:,} tokens，估算总成本 ${round(total_estimated_cost, 2)}。"
+        if total_tokens
+        else "本窗口未检测到可计量 token。"
+    )
+    return {
+        "title": "Token Cost Signal",
+        "summary": summary,
+        "bullets": bullets,
+    }
+
+
+def _drift_reasons(session: dict) -> list[str]:
+    reasons = []
+    user_messages = session.get("user_messages", 0) or 0
+    active_minutes = session.get("active_minutes", 0) or session.get("duration_minutes", 0) or 0
+    tool_kinds = len((session.get("tool_counts") or {}).keys())
+    apply_patch = (session.get("tool_counts") or {}).get("apply_patch", 0)
+    friction = sum((session.get("friction_counts") or {}).values())
+    if user_messages >= 18:
+        reasons.append(f"消息密度高({user_messages})")
+    if active_minutes >= 120:
+        reasons.append(f"链路较长({active_minutes}m)")
+    if tool_kinds >= 6:
+        reasons.append(f"工具切换多({tool_kinds}类)")
+    if session.get("source") == "codex_cli" and user_messages >= 12 and apply_patch <= 1:
+        reasons.append("讨论较多但落地改动偏少")
+    if session.get("source") == "claude_code" and session.get("outcome") in {"partially_achieved", "not_achieved"} and friction >= 2:
+        reasons.append("未达成且摩擦偏高")
+    return reasons
+
+
+def _build_drift_signal(data: AnalyzedData, meta: ReportMeta) -> dict:
+    sessions = _selected_sessions(data, meta)
+    candidates = []
+    for session in sessions:
+        reasons = _drift_reasons(session)
+        if len(reasons) >= 2:
+            label = f"{source_label(session.get('source', ''))} | {infer_project(session)}"
+            candidates.append((label, reasons, len(reasons)))
+    candidates.sort(key=lambda item: item[2], reverse=True)
+    bullets = [
+        f"{label}: {', '.join(reasons[:3])}"
+        for label, reasons, _score in candidates[:4]
+    ] or ["未检测到明显目标漂移信号。"]
+    if sessions:
+        ratio = round(len(candidates) / len(sessions) * 100, 1)
+        summary = f"疑似目标漂移会话 {len(candidates)}/{len(sessions)}（{ratio}%）。该指标是启发式信号，不是人工标注真值。"
+    else:
+        summary = "暂无会话样本，无法评估目标漂移。"
+    return {
+        "title": "Goal Drift Signal",
+        "summary": summary,
+        "bullets": bullets,
+    }
+
+
+def _prompt_signature(text: str) -> str:
+    if not text:
+        return ""
+    cleaned = re.sub(r"\s+", " ", text.strip().lower())
+    cleaned = re.sub(r"/[\w\-./]+", "<path>", cleaned)
+    cleaned = re.sub(r"\d+", "<n>", cleaned)
+    return cleaned[:48]
+
+
+def _build_asset_signal(data: AnalyzedData, meta: ReportMeta) -> dict:
+    sessions = _selected_sessions(data, meta)
+    total = len(sessions)
+    project_counts = Counter(infer_project(session) for session in sessions)
+    domain_counts = Counter(infer_domain(session) for session in sessions)
+    prompt_counts = Counter(_prompt_signature(session.get("first_prompt", "")) for session in sessions)
+    reusable_projects = [(name, count) for name, count in project_counts.most_common(4) if count >= 2 and name != "unknown"]
+    reusable_domains = [(name, count) for name, count in domain_counts.most_common(4) if count >= 2 and name != "unknown"]
+    repeated_prompts = [(name, count) for name, count in prompt_counts.most_common(4) if name and count >= 2]
+    top2_cover = sum(count for _name, count in project_counts.most_common(2))
+    cover_ratio = round(top2_cover / total * 100, 1) if total else 0.0
+    bullets = []
+    if reusable_projects:
+        bullets.append("项目SOP候选: " + "；".join(f"{name}({count})" for name, count in reusable_projects[:3]))
+    if reusable_domains:
+        bullets.append("任务模板候选: " + "；".join(f"{name}({count})" for name, count in reusable_domains[:3]))
+    if repeated_prompts:
+        bullets.append("重复提示词簇: " + "；".join(f"{name[:24]}...({count})" for name, count in repeated_prompts[:2]))
+    if not bullets:
+        bullets.append("可复用资产信号偏弱，建议先稳定记录项目与提示词。")
+    summary = (
+        f"Top2 项目覆盖 {top2_cover}/{total} sessions（{cover_ratio}%），已有资产化空间。"
+        if total
+        else "暂无会话样本，无法识别可复用资产。"
+    )
+    return {
+        "title": "Reusable Assets Signal",
+        "summary": summary,
+        "bullets": bullets,
+    }
+
+
+def build_operational_signals(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
+    return [
+        _build_cost_signal(data, meta),
+        _build_drift_signal(data, meta),
+        _build_asset_signal(data, meta),
+    ]
+
+
+def _signal_recommendations(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
+    sessions = _selected_sessions(data, meta)
+    total = len(sessions)
+    total_tokens = sum(_token_count(session) for session in sessions)
+    drift_hits = 0
+    for session in sessions:
+        if len(_drift_reasons(session)) >= 2:
+            drift_hits += 1
+    drift_ratio = (drift_hits / total) if total else 0.0
+    project_counts = Counter(infer_project(session) for session in sessions)
+    top2_cover = sum(count for _name, count in project_counts.most_common(2))
+    cover_ratio = (top2_cover / total) if total else 0.0
+
+    cards: list[dict] = []
+    if total_tokens >= 5_000_000:
+        cards.append(
+            {
+                "title": "加上 Token 预算门禁",
+                "desc": f"本窗口 token 已到 {total_tokens:,}。建议按项目设预算上限和超额提醒，避免高消耗会话持续外溢。",
+            }
+        )
+    elif total_tokens > 0:
+        cards.append(
+            {
+                "title": "保持成本趋势跟踪",
+                "desc": f"当前累计 token {total_tokens:,}。建议固定看周环比，提早发现成本抬头。",
+            }
+        )
+
+    if drift_ratio >= 0.2:
+        cards.append(
+            {
+                "title": "先治目标漂移",
+                "desc": f"疑似漂移占比 {drift_ratio * 100:.1f}%。建议强制每阶段复述目标/边界/结束条件，再继续执行。",
+            }
+        )
+    elif drift_hits > 0:
+        cards.append(
+            {
+                "title": "建立漂移观察清单",
+                "desc": f"本期有 {drift_hits} 个漂移信号会话。建议纳入周复盘并追踪是否反复出现。",
+            }
+        )
+    else:
+        cards.append(
+            {
+                "title": "目标对齐保持得不错",
+                "desc": "本期未见明显漂移信号。继续保持阶段化推进和边界显式声明。",
+            }
+        )
+
+    if total >= 4 and cover_ratio >= 0.6:
+        cards.append(
+            {
+                "title": "优先沉淀 Top2 资产",
+                "desc": f"Top2 项目覆盖 {cover_ratio * 100:.1f}%。先给这两个项目各产出 1 份 SOP + Prompt 包，复用收益最高。",
+            }
+        )
+    elif total > 0:
+        cards.append(
+            {
+                "title": "先积累再资产化",
+                "desc": "当前项目分布较散。建议先补样本并统一记录 prompt 结构，再做模板沉淀。",
+            }
+        )
+    return cards
+
+
 def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
     claude = data.comparison.get("claude_code", {})
     codex = data.comparison.get("codex_cli", {})
@@ -240,30 +461,36 @@ def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list
         avg_msg = claude.get("avg_user_messages", 0)
         avg_min = claude.get("avg_duration_min", 0)
         top_tools = ", ".join(f"{name}({cnt})" for name, cnt in (claude.get("top_tools") or [])[:3]) or "暂无"
-        return [
+        cards = [
             {"title": "分析层持续使用", "desc": f"本期 Claude {sessions} 个 sessions，平均 {avg_min} 分钟、{avg_msg} 条消息，适合继续承担分析与收敛。"},
             {"title": "结构化输出优先", "desc": f"当前 Top tools 为 {top_tools}，建议将输出固定为结论/证据/风险/建议/验证。"},
             {"title": "强化交接清单", "desc": "将 Claude 结论转为执行清单后交给执行层，可降低跨工具返工。"},
         ]
+        cards.extend(_signal_recommendations(data, meta))
+        return cards
     if meta.tool == "codex":
         sessions = codex.get("sessions", 0)
         avg_msg = codex.get("avg_user_messages", 0)
         avg_min = codex.get("avg_duration_min", 0)
         top_tools = ", ".join(f"{name}({cnt})" for name, cnt in (codex.get("top_tools") or [])[:3]) or "暂无"
-        return [
+        cards = [
             {"title": "执行层持续使用", "desc": f"本期 Codex {sessions} 个 sessions，平均 {avg_min} 分钟、{avg_msg} 条消息，执行角色明确。"},
             {"title": "阶段协议优先", "desc": f"Top tools 为 {top_tools}，建议每批改动后固定输出阶段小结。"},
             {"title": "验证门禁前移", "desc": "每批改动后先做 analyze/关键检查，再进入下一批，可降低长链路返工。"},
         ]
+        cards.extend(_signal_recommendations(data, meta))
+        return cards
     c_sessions = claude.get("sessions", 0)
     x_sessions = codex.get("sessions", 0)
     c_avg_msg = claude.get("avg_user_messages", 0)
     x_avg_msg = codex.get("avg_user_messages", 0)
-    return [
+    cards = [
         {"title": "保持双层分工", "desc": f"本期 sessions: Claude {c_sessions} / Codex {x_sessions}，角色分工已具备数据支撑。"},
         {"title": "按消息密度分配角色", "desc": f"每 session 消息数: Claude {c_avg_msg} / Codex {x_avg_msg}，建议继续分析-执行拆分。"},
         {"title": "优先优化交接质量", "desc": "将目标、边界、验证命令作为固定交接字段，可提升跨工具稳定性。"},
     ]
+    cards.extend(_signal_recommendations(data, meta))
+    return cards
 
 
 def build_prompt_library(narrative: NarrativeBundle, meta: ReportMeta) -> dict[str, list[dict]]:
@@ -365,6 +592,7 @@ def build_report_extras(
     return ReportExtras(
         snapshot_compare=build_snapshot_compare(data, meta, previous_snapshot, quality),
         trend_cards=build_trend_cards(data, meta),
+        operational_signals=build_operational_signals(data, meta),
         platform_recommendations=build_platform_recommendations(data, meta),
         project_drilldown=build_project_drilldown(data, meta),
         leaderboards=build_leaderboards(data, meta),
