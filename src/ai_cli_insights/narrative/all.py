@@ -91,7 +91,7 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     feature_cards = [
         {
             "title": "交接模板",
-            "summary": "Claude 输出执行清单后再交给 Codex。",
+            "summary": "先输出执行清单，再交给下一步工具。",
             "detail": "可降低跨工具信息损耗。",
             "starter": "固定四项清单模板。",
             "prompt": "请先输出执行清单：目标、边界、相关文件、验证命令。确认后再进入执行。",

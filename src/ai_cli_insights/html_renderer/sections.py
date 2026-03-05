@@ -683,6 +683,6 @@ def render_task_matrix(rows: list[dict]) -> str:
     )
     return (
         f"{heading_html('h2', '任务类型建议矩阵', 'matrix', 'section-matrix')}"
-        '<table class="comparison-table matrix-table"><thead><tr><th>任务类型</th><th>推荐平台</th><th>观察到的会话数</th><th>推荐流程</th></tr></thead>'
+        '<table class="comparison-table matrix-table"><thead><tr><th>任务类型</th><th>样本信号（非限制）</th><th>观察到的会话数</th><th>建议流程（可调整）</th></tr></thead>'
         f'<tbody>{body}</tbody></table>'
     )

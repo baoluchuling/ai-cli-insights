@@ -219,17 +219,54 @@ def build_leaderboards(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
 
 def build_task_matrix(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
     task_rows = [
-        ("分析评审", "Claude", "先收敛目标、约束和证据，再决定是否进入执行"),
-        ("调试与构建", "Claude -> Codex" if meta.tool == "all" else source_label(meta.primary_source or ""), "Claude 做 root cause，Codex 做修复与验证"),
-        ("跨仓实现", "Codex" if meta.tool == "all" else source_label(meta.primary_source or ""), "先定边界，再分 repo 连续施工"),
-        ("测试验证", "Codex" if meta.tool == "all" else source_label(meta.primary_source or ""), "按计划和门禁循环推进"),
-        ("工作流设计", "Claude" if meta.tool == "all" else source_label(meta.primary_source or ""), "先定义规则，再固化成模板"),
-        ("长链路执行", "Codex" if meta.tool == "all" else source_label(meta.primary_source or ""), "强制阶段 checkpoint 和回放小结"),
+        ("分析评审", "先收敛目标、约束和证据，再决定是否进入执行"),
+        ("调试与构建", "先定位根因，再小步修复并即时验证"),
+        ("跨仓实现", "先定边界，再分 repo 连续施工"),
+        ("测试验证", "按计划和门禁循环推进"),
+        ("工作流设计", "先定义规则，再固化成模板"),
+        ("长链路执行", "强制阶段 checkpoint 和回放小结"),
     ]
-    counts = Counter(infer_task_type(session) for session in data.sessions)
+    counts = Counter()
+    by_task_source: dict[str, Counter] = {}
+    for session in data.sessions:
+        task = infer_task_type(session)
+        source = session.get("source", "")
+        counts[task] += 1
+        by_task_source.setdefault(task, Counter())[source] += 1
+
+    def recommend_platform(task: str) -> str:
+        source_counter = by_task_source.get(task, Counter())
+        total = sum(source_counter.values())
+        claude_count = source_counter.get("claude_code", 0)
+        codex_count = source_counter.get("codex_cli", 0)
+        if total == 0:
+            return "待观察（样本不足）"
+        if meta.tool == "all":
+            gap = abs(claude_count - codex_count) / total
+            if claude_count > 0 and codex_count > 0 and gap <= 0.25:
+                return "双工具均有样本，按完成率/返工率动态路由"
+            if claude_count == 0:
+                return "仅 Codex 有样本，建议补 Claude 小样本 A/B"
+            if codex_count == 0:
+                return "仅 Claude 有样本，建议补 Codex 小样本 A/B"
+            if claude_count > codex_count:
+                ratio = round(claude_count / total * 100)
+                return f"当前偏 Claude（{ratio}%），但不建议写死，保留 A/B"
+            ratio = round(codex_count / total * 100)
+            return f"当前偏 Codex（{ratio}%），但不建议写死，保留 A/B"
+        if meta.primary_source:
+            return f"当前仅 {source_label(meta.primary_source)} 样本，建议补跨工具对照"
+        dominant = max(source_counter.items(), key=lambda item: item[1])[0]
+        return f"当前样本偏 {source_label(dominant)}，建议按结果动态调整"
+
     return [
-        {"task": task, "recommended": recommended, "workflow": workflow, "observed_sessions": counts.get(task, 0)}
-        for task, recommended, workflow in task_rows
+        {
+            "task": task,
+            "recommended": recommend_platform(task),
+            "workflow": workflow,
+            "observed_sessions": counts.get(task, 0),
+        }
+        for task, workflow in task_rows
     ]
 
 
@@ -462,9 +499,9 @@ def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list
         avg_min = claude.get("avg_duration_min", 0)
         top_tools = ", ".join(f"{name}({cnt})" for name, cnt in (claude.get("top_tools") or [])[:3]) or "暂无"
         cards = [
-            {"title": "分析层持续使用", "desc": f"本期 Claude {sessions} 次会话，平均 {avg_min} 分钟、{avg_msg} 条消息，适合继续承担分析与收敛。"},
-            {"title": "结构化输出优先", "desc": f"当前 Top tools 为 {top_tools}，建议将输出固定为结论/证据/风险/建议/验证。"},
-            {"title": "强化交接清单", "desc": "将 Claude 结论转为执行清单后交给执行层，可降低跨工具返工。"},
+            {"title": "保持高价值用法", "desc": f"本期 Claude {sessions} 次会话，平均 {avg_min} 分钟、{avg_msg} 条消息；Top tools: {top_tools}。优先延续已验证有效的任务类型。"},
+            {"title": "结构化输出优先", "desc": "建议固定输出结论/证据/风险/建议/验证，提升复盘与协作可读性。"},
+            {"title": "工具选择按结果决定", "desc": "不要预设“Claude 只能做某类任务”，建议按完成率、返工率、验证通过率做动态路由。"},
         ]
         cards.extend(_signal_recommendations(data, meta))
         return cards
@@ -474,9 +511,9 @@ def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list
         avg_min = codex.get("avg_duration_min", 0)
         top_tools = ", ".join(f"{name}({cnt})" for name, cnt in (codex.get("top_tools") or [])[:3]) or "暂无"
         cards = [
-            {"title": "执行层持续使用", "desc": f"本期 Codex {sessions} 次会话，平均 {avg_min} 分钟、{avg_msg} 条消息，执行角色明确。"},
-            {"title": "阶段协议优先", "desc": f"Top tools 为 {top_tools}，建议每批改动后固定输出阶段小结。"},
-            {"title": "验证门禁前移", "desc": "每批改动后先做 analyze/关键检查，再进入下一批，可降低长链路返工。"},
+            {"title": "保持高价值用法", "desc": f"本期 Codex {sessions} 次会话，平均 {avg_min} 分钟、{avg_msg} 条消息；Top tools: {top_tools}。优先延续已验证有效的任务类型。"},
+            {"title": "阶段协议优先", "desc": "建议每批改动后固定输出阶段小结，提升可回放性。"},
+            {"title": "工具选择按结果决定", "desc": "不要预设“Codex 只能做某类任务”，建议按完成率、返工率、验证通过率做动态路由。"},
         ]
         cards.extend(_signal_recommendations(data, meta))
         return cards
@@ -484,10 +521,14 @@ def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list
     x_sessions = codex.get("sessions", 0)
     c_avg_msg = claude.get("avg_user_messages", 0)
     x_avg_msg = codex.get("avg_user_messages", 0)
+    if c_sessions == 0 or x_sessions == 0:
+        route_tip = "当前样本偏单工具，建议下周期对另一工具做小样本 A/B 试跑，再决定是否扩大使用。"
+    else:
+        route_tip = "当前双工具均有样本，建议按任务完成率/返工率动态选择，不要固定工具分工。"
     cards = [
-        {"title": "保持双层分工", "desc": f"本期会话: Claude {c_sessions} / Codex {x_sessions}，角色分工已具备数据支撑。"},
-        {"title": "按消息密度分配角色", "desc": f"每 session 消息数: Claude {c_avg_msg} / Codex {x_avg_msg}，建议继续分析-执行拆分。"},
-        {"title": "优先优化交接质量", "desc": "将目标、边界、验证命令作为固定交接字段，可提升跨工具稳定性。"},
+        {"title": "先看真实分布", "desc": f"本期会话分布：Claude {c_sessions} / Codex {x_sessions}；每会话消息：Claude {c_avg_msg} / Codex {x_avg_msg}。"},
+        {"title": "动态路由而非写死分工", "desc": route_tip},
+        {"title": "优先优化交接质量", "desc": "将目标、边界、验证命令作为固定交接字段，可提升跨工具协作稳定性。"},
     ]
     cards.extend(_signal_recommendations(data, meta))
     return cards
@@ -501,8 +542,8 @@ def build_prompt_library(narrative: NarrativeBundle, meta: ReportMeta) -> dict[s
     if meta.tool == "all":
         library["交接模板"] = [
             {
-                "title": "Claude -> Codex 交接模板",
-                "prompt": "先让 Claude 输出目标 repo、参考实现、改动边界、验证命令。确认后，把同一份清单完整交给 Codex 执行，并要求每个阶段输出已完成、已验证、剩余风险、下一步。",
+                "title": "跨工具交接模板（通用）",
+                "prompt": "先由当前工具输出交接清单：目标 repo、改动边界、证据/参考、验证命令、结束条件。确认后交给下一工具执行，并要求每阶段输出：已完成、已验证、剩余风险、下一步。",
             }
         ]
     return library
