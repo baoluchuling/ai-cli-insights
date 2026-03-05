@@ -236,21 +236,33 @@ def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list
     claude = data.comparison.get("claude_code", {})
     codex = data.comparison.get("codex_cli", {})
     if meta.tool == "claude":
+        sessions = claude.get("sessions", 0)
+        avg_msg = claude.get("avg_user_messages", 0)
+        avg_min = claude.get("avg_duration_min", 0)
+        top_tools = ", ".join(f"{name}({cnt})" for name, cnt in (claude.get("top_tools") or [])[:3]) or "暂无"
         return [
-            {"title": "继续把 Claude 固定在分析层", "desc": "最适合它的仍然是目标澄清、root cause、review 和边界判断。"},
-            {"title": "先约束输出，再追求更深答案", "desc": "高摩擦点说明比起加上下文，更应该先强化结构化输出和证据链模板。"},
-            {"title": "把结果作为执行层输入", "desc": "Claude 的高价值产物应该更频繁地转交给 Codex 或其他执行层，而不是让它自己长链路施工。"},
+            {"title": "分析层持续使用", "desc": f"本期 Claude {sessions} 个 sessions，平均 {avg_min} 分钟、{avg_msg} 条消息，适合继续承担分析与收敛。"},
+            {"title": "结构化输出优先", "desc": f"当前 Top tools 为 {top_tools}，建议将输出固定为结论/证据/风险/建议/验证。"},
+            {"title": "强化交接清单", "desc": "将 Claude 结论转为执行清单后交给执行层，可降低跨工具返工。"},
         ]
     if meta.tool == "codex":
+        sessions = codex.get("sessions", 0)
+        avg_msg = codex.get("avg_user_messages", 0)
+        avg_min = codex.get("avg_duration_min", 0)
+        top_tools = ", ".join(f"{name}({cnt})" for name, cnt in (codex.get("top_tools") or [])[:3]) or "暂无"
         return [
-            {"title": "继续把 Codex 固定在执行层", "desc": "它最适合持续施工、验证和多文件落地，而不是高不确定分析。"},
-            {"title": "优先治理阶段协议", "desc": "当前最值得提升的不是能力上限，而是每一段执行的可回放性。"},
-            {"title": "把验证链前移", "desc": "每批改动后立刻做 analyze / grep / 计划检查，会明显降低长链路返工。"},
+            {"title": "执行层持续使用", "desc": f"本期 Codex {sessions} 个 sessions，平均 {avg_min} 分钟、{avg_msg} 条消息，执行角色明确。"},
+            {"title": "阶段协议优先", "desc": f"Top tools 为 {top_tools}，建议每批改动后固定输出阶段小结。"},
+            {"title": "验证门禁前移", "desc": "每批改动后先做 analyze/关键检查，再进入下一批，可降低长链路返工。"},
         ]
+    c_sessions = claude.get("sessions", 0)
+    x_sessions = codex.get("sessions", 0)
+    c_avg_msg = claude.get("avg_user_messages", 0)
+    x_avg_msg = codex.get("avg_user_messages", 0)
     return [
-        {"title": "推荐继续保持 Claude 负责判断层", "desc": f"Claude 当前平均每 session {claude.get('avg_user_messages', 0)} 条消息，更像收敛和 review 工作位。"},
-        {"title": "推荐继续保持 Codex 负责执行层", "desc": f"Codex 当前平均每 session {codex.get('avg_user_messages', 0)} 条消息、{codex.get('avg_duration_min', 0)} 分钟，更适合连续施工。"},
-        {"title": "当前最值得调整的是 handoff 质量", "desc": "真正影响稳定性的，不是哪边更强，而是分析层交给执行层时边界和验证是否够明确。"},
+        {"title": "保持双层分工", "desc": f"本期 sessions: Claude {c_sessions} / Codex {x_sessions}，角色分工已具备数据支撑。"},
+        {"title": "按消息密度分配角色", "desc": f"每 session 消息数: Claude {c_avg_msg} / Codex {x_avg_msg}，建议继续分析-执行拆分。"},
+        {"title": "优先优化交接质量", "desc": "将目标、边界、验证命令作为固定交接字段，可提升跨工具稳定性。"},
     ]
 
 
