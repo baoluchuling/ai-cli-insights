@@ -1,0 +1,25 @@
+{
+  "domain_patterns": {},
+  "domain_priority": [],
+  "project_patterns": [],
+  "template_modes": {
+    "all": {
+      "title": "Multi-CLI Insights",
+      "subtitle_prefix": "Cross-tool analysis",
+      "file_slug": "multi-insights",
+      "compare_sources": true
+    },
+    "claude": {
+      "title": "Claude Code Insights",
+      "subtitle_prefix": "Claude single-tool analysis",
+      "file_slug": "multi-insights-claude-only",
+      "compare_sources": false
+    },
+    "codex": {
+      "title": "Codex CLI Insights",
+      "subtitle_prefix": "Codex single-tool analysis",
+      "file_slug": "multi-insights-codex-only",
+      "compare_sources": false
+    }
+  }
+}
