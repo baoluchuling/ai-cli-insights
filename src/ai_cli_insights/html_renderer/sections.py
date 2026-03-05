@@ -366,6 +366,7 @@ def render_chart_rows(data: AnalyzedData, meta: ReportMeta) -> tuple[str, str]:
     top_tools_title = "Claude Top Tools" if meta.compare_sources else f"{source_name} Top Tools"
     top_projects_title = "Codex Top Tools" if meta.compare_sources else f"{source_name} Top Projects"
     top_domains_title = "Claude Top Domains" if meta.compare_sources else f"{source_name} Top Domains"
+    empty_inference = '<div class="empty">见下方 inference 卡片</div>'
     first = (
         '<div class="charts-row">'
         '<div class="chart-card">'
@@ -386,7 +387,7 @@ def render_chart_rows(data: AnalyzedData, meta: ReportMeta) -> tuple[str, str]:
         "</div>"
         '<div class="chart-card">'
         f"{block_title_html('Codex Top Domains' if meta.compare_sources else 'Codex 推断执行画像', 'chart_execution_archetypes', 'chart-title')}"
-        f"{bar_rows(codex.get('top_domains', []), '#16a34a') if meta.compare_sources else '<div class=\"empty\">见下方 inference 卡片</div>'}"
+        f"{bar_rows(codex.get('top_domains', []), '#16a34a') if meta.compare_sources else empty_inference}"
         "</div>"
         "</div>"
     )
@@ -422,14 +423,17 @@ def render_claude_focus_row(data: AnalyzedData) -> str:
 
 def render_codex_execution_row(data: AnalyzedData, meta: ReportMeta) -> str:
     primary = data.comparison.get(meta.primary_source or "", {})
+    source_name = source_label(meta.primary_source or "")
+    top_projects_title = f"{source_name} Top Projects"
+    top_domains_title = f"{source_name} Top Domains"
     return (
         '<div class="charts-row">'
         '<div class="chart-card">'
-        f"{block_title_html(f'{source_label(meta.primary_source or '')} Top Projects', 'chart_top_projects', 'chart-title')}"
+        f"{block_title_html(top_projects_title, 'chart_top_projects', 'chart-title')}"
         f"{bar_rows(primary.get('top_projects', []), '#16a34a')}"
         "</div>"
         '<div class="chart-card">'
-        f"{block_title_html(f'{source_label(meta.primary_source or '')} Top Domains', 'chart_top_domains', 'chart-title')}"
+        f"{block_title_html(top_domains_title, 'chart_top_domains', 'chart-title')}"
         f"{bar_rows(primary.get('top_domains', []), '#0891b2')}"
         "</div>"
         "</div>"
