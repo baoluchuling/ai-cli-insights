@@ -213,7 +213,7 @@ def main() -> None:
     gen.add_argument(
         "--llm-analyzer",
         choices=["auto", "codex", "claude", "gemini", "none"],
-        default="none",
+        default="auto",
         help="Use external CLI for deep analysis. auto = codex -> claude -> gemini.",
     )
     gen.add_argument("--llm-model", default=None, help="Optional model name passed to selected LLM CLI.")
@@ -243,7 +243,7 @@ def main() -> None:
         gen_parser.add_argument("--tool", choices=["all", "claude", "codex"], default="all")
         gen_parser.add_argument("--analyst", choices=["codex", "claude"], default="codex")
         gen_parser.add_argument("--output-dir", default=None)
-        gen_parser.add_argument("--llm-analyzer", choices=["auto", "codex", "claude", "gemini", "none"], default="none")
+        gen_parser.add_argument("--llm-analyzer", choices=["auto", "codex", "claude", "gemini", "none"], default="auto")
         gen_parser.add_argument("--llm-model", default=None)
         gen_parser.add_argument("--llm-timeout-sec", type=int, default=120)
         args = gen_parser.parse_args()

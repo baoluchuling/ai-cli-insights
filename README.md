@@ -39,8 +39,8 @@ ai-cli-insights --days 7 --tool claude
 
 The HTML report is saved to the output directory and can be opened in any browser.
 
-By default, `generate` runs with `--days 30 --tool all --llm-analyzer none`.
-Set `--llm-analyzer auto` if you want deep LLM analysis (`codex -> claude -> gemini`).
+By default, `generate` runs with `--days 30 --tool all --llm-analyzer auto`.
+Deep LLM analysis order is `codex -> claude -> gemini`.
 When LLM analysis succeeds, core narrative/recommendation sections are replaced by live model output.
 
 ## Configuration
@@ -91,7 +91,7 @@ Generate options:
   --tool MODE     all | claude | codex (default: all)
   --analyst WHO   codex | claude — label the analyzing model (default: codex)
   --output-dir    Override the output directory
-  --llm-analyzer  auto | codex | claude | gemini | none (default: none)
+  --llm-analyzer  auto | codex | claude | gemini | none (default: auto)
   --llm-model     Optional model name passed to selected LLM CLI
   --llm-timeout-sec  Timeout per provider call (default: 120)
 
