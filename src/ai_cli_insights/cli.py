@@ -12,6 +12,7 @@ from .analytics import analyze, build_period_comparison, run_collect, subset_raw
 from .config import config_dir, output_dir, make_report_meta
 from .extras import build_report_extras, snapshot_payload
 from .html_renderer import load_previous_snapshot, render_html, run_self_check, write_report, write_snapshot
+from .llm_analysis import run_llm_analysis
 from .narrative import build_narrative_bundle, build_project_area_cards
 from .models import PlatformSection
 
@@ -28,6 +29,16 @@ def cmd_generate(args: argparse.Namespace) -> None:
     project_cards = build_project_area_cards(data, meta)
     previous_snapshot = load_previous_snapshot(out, meta)
     extras = build_report_extras(data, meta, narrative, previous_snapshot)
+    llm_analysis = run_llm_analysis(
+        data,
+        meta,
+        period_comparison,
+        extras,
+        provider=args.llm_analyzer,
+        model=args.llm_model,
+        timeout_sec=args.llm_timeout_sec,
+    )
+    extras.llm_analysis = llm_analysis
     platform_sections: dict[str, PlatformSection] = {}
     if args.tool == "all":
         for tool_name, source in (("claude", "claude_code"), ("codex", "codex_cli")):
@@ -63,6 +74,10 @@ def cmd_generate(args: argparse.Namespace) -> None:
                         "avg_user_messages": stats.get("avg_user_messages", 0),
                     }
                     for source, stats in data.comparison.items()
+                },
+                "llm_analysis": {
+                    "provider": (llm_analysis or {}).get("provider", ""),
+                    "status": (llm_analysis or {}).get("status", "disabled"),
                 },
             },
             ensure_ascii=False,
@@ -141,6 +156,14 @@ def main() -> None:
         help="Label the analyzing model source (does not affect data collection).",
     )
     gen.add_argument("--output-dir", default=None, help="Output directory (default: XDG data dir)")
+    gen.add_argument(
+        "--llm-analyzer",
+        choices=["auto", "codex", "claude", "gemini", "none"],
+        default="auto",
+        help="Use external CLI for deep analysis. auto = codex -> claude -> gemini.",
+    )
+    gen.add_argument("--llm-model", default=None, help="Optional model name passed to selected LLM CLI.")
+    gen.add_argument("--llm-timeout-sec", type=int, default=120, help="Timeout for one LLM provider call.")
     gen.set_defaults(func=cmd_generate)
 
     # init
@@ -166,6 +189,9 @@ def main() -> None:
         gen_parser.add_argument("--tool", choices=["all", "claude", "codex"], default="all")
         gen_parser.add_argument("--analyst", choices=["codex", "claude"], default="codex")
         gen_parser.add_argument("--output-dir", default=None)
+        gen_parser.add_argument("--llm-analyzer", choices=["auto", "codex", "claude", "gemini", "none"], default="auto")
+        gen_parser.add_argument("--llm-model", default=None)
+        gen_parser.add_argument("--llm-timeout-sec", type=int, default=120)
         args = gen_parser.parse_args()
         args.func = cmd_generate
 

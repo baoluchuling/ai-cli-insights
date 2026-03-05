@@ -342,7 +342,13 @@ def snapshot_payload(data: AnalyzedData, quality_score: dict, generated_at: str)
     }
 
 
-def build_report_extras(data: AnalyzedData, meta: ReportMeta, narrative: NarrativeBundle, previous_snapshot: dict | None) -> ReportExtras:
+def build_report_extras(
+    data: AnalyzedData,
+    meta: ReportMeta,
+    narrative: NarrativeBundle,
+    previous_snapshot: dict | None,
+    llm_analysis: dict | None = None,
+) -> ReportExtras:
     quality = build_quality_score(data, meta, narrative)
     return ReportExtras(
         snapshot_compare=build_snapshot_compare(data, meta, previous_snapshot, quality),
@@ -353,4 +359,5 @@ def build_report_extras(data: AnalyzedData, meta: ReportMeta, narrative: Narrati
         prompt_library=build_prompt_library(narrative, meta),
         task_matrix=build_task_matrix(data, meta),
         quality_score=quality,
+        llm_analysis=llm_analysis,
     )

@@ -65,6 +65,7 @@ class ReportExtras:
     prompt_library: dict[str, list[dict]]
     task_matrix: list[dict]
     quality_score: dict
+    llm_analysis: dict | None = None
 
 
 @dataclass

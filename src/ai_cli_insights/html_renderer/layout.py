@@ -17,6 +17,7 @@ from .sections import (
     render_glance,
     render_horizon_cards,
     render_leaderboards,
+    render_llm_analysis,
     render_project_drilldown,
     render_prompt_library,
     render_quality_score,
@@ -60,6 +61,7 @@ def render_single_platform_block(section: PlatformSection, anchor_prefix: str = 
     leaderboard_html = scope_section_ids(render_leaderboards(section.extras.leaderboards), anchor_prefix)
     matrix_html = scope_section_ids(render_task_matrix(section.extras.task_matrix), anchor_prefix)
     library_html = scope_section_ids(render_prompt_library(section.extras.prompt_library, section.meta.tool), anchor_prefix)
+    llm_analysis_html = scope_section_ids(render_llm_analysis(section.extras.llm_analysis), anchor_prefix)
     feature_section_class = f"{anchor_prefix}features-section" if anchor_prefix else "features-section"
     pattern_section_class = f"{anchor_prefix}patterns-section" if anchor_prefix else "patterns-section"
     anchor = lambda suffix: f"{anchor_prefix}{suffix}" if anchor_prefix else suffix
@@ -79,6 +81,7 @@ def render_single_platform_block(section: PlatformSection, anchor_prefix: str = 
         f"{snapshot_html}"
         f"{trend_html}"
         f"{recommendation_html}"
+        f"{llm_analysis_html}"
         f"{heading_html('h3', 'What You Work On', 'work', anchor('work'))}"
         f"<p class=\"section-intro\">{html.escape(section.narrative.work_intro)}</p>"
         f"<div class=\"project-areas\">{project_html}</div>"
@@ -150,6 +153,7 @@ def render_html(
     leaderboard_html = render_leaderboards(extras.leaderboards)
     matrix_html = render_task_matrix(extras.task_matrix)
     library_html = render_prompt_library(extras.prompt_library, meta.tool)
+    llm_analysis_html = render_llm_analysis(extras.llm_analysis)
     claude_platform_html = ""
     codex_platform_html = ""
     if meta.tool == "all" and platform_sections:
@@ -197,6 +201,7 @@ def render_html(
             '<a href="#section-snapshot">Snapshot</a>'
             '<a href="#section-trends">Trends</a>'
             '<a href="#section-recommendations">Recommendations</a>'
+            '<a href="#section-llm">LLM</a>'
             '<a href="#work">What You Work On</a>'
             '<a href="#usage">Usage</a>'
             '<a href="#compare">Snapshot</a>'
@@ -265,6 +270,7 @@ def render_html(
               <a href="#section-snapshot">Snapshot</a>
               <a href="#section-trends">Trends</a>
               <a href="#section-recommendations">Recommendations</a>
+              <a href="#section-llm">LLM</a>
               <a href="#section-work">What You Work On</a>
               <a href="#section-usage">{html.escape(usage_heading)}</a>
               <a href="#section-compare">Usage Comparison</a>
@@ -285,6 +291,7 @@ def render_html(
             {snapshot_html}
             {trend_html}
             {recommendation_html}
+            {llm_analysis_html}
             {heading_html('h2', 'What You Work On', 'work', 'section-work')}
             <p class="section-intro">{html.escape(narrative.work_intro)}</p>
             <div class="project-areas">{project_html}</div>

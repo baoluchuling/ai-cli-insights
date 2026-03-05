@@ -6,6 +6,7 @@ Cross-tool usage analytics for **Claude Code** and **Codex CLI**. Collects sessi
 
 - Unified data collection from Claude Code (`~/.claude/`) and Codex CLI (`~/.codex/`)
 - Three report modes: cross-tool comparison, Claude-only, Codex-only
+- Optional deep analysis via external LLM CLI (Codex / Claude / Gemini)
 - Period-over-period comparison, trend sparklines, quality scoring
 - Friction pattern analysis with evidence-based recommendations
 - Prompt library with copy-to-clipboard templates
@@ -23,6 +24,9 @@ pip install ai-cli-insights
 # Generate a cross-tool report for the last 30 days
 ai-cli-insights generate --days 30 --tool all
 
+# Force a specific LLM analyzer
+ai-cli-insights generate --days 30 --tool all --llm-analyzer claude
+
 # Claude-only report
 ai-cli-insights generate --tool claude
 
@@ -34,6 +38,8 @@ ai-cli-insights --days 7 --tool claude
 ```
 
 The HTML report is saved to the output directory and can be opened in any browser.
+
+By default, `generate` will try deep LLM analysis in this order: `codex -> claude -> gemini`.
 
 ## Configuration
 
@@ -83,6 +89,9 @@ Generate options:
   --tool MODE     all | claude | codex (default: all)
   --analyst WHO   codex | claude — label the analyzing model (default: codex)
   --output-dir    Override the output directory
+  --llm-analyzer  auto | codex | claude | gemini | none (default: auto)
+  --llm-model     Optional model name passed to selected LLM CLI
+  --llm-timeout-sec  Timeout per provider call (default: 120)
 
 python -m ai_cli_insights also works.
 ```

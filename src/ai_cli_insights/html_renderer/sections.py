@@ -549,6 +549,48 @@ def render_recommendations(cards: list[dict], variant: str = "all") -> str:
     )
 
 
+def render_llm_analysis(llm_analysis: dict | None) -> str:
+    if not llm_analysis:
+        return ""
+    if llm_analysis.get("status") != "success":
+        errors = llm_analysis.get("errors", [])
+        error_rows = "".join(
+            (
+                "<tr>"
+                f"<td>{html.escape(item.get('provider', ''))}</td>"
+                f"<td>{html.escape(item.get('error', ''))}</td>"
+                "</tr>"
+            )
+            for item in errors
+        ) or "<tr><td colspan='2'>No details</td></tr>"
+        return (
+            f"{heading_html('h2', 'LLM Deep Analysis', 'llm', 'section-llm')}"
+            "<p class='section-intro'>已尝试调用外部 LLM 生成深度分析，但本次调用失败。</p>"
+            "<table class='comparison-table'><thead><tr><th>Provider</th><th>Error</th></tr></thead>"
+            f"<tbody>{error_rows}</tbody></table>"
+        )
+
+    insights = "".join(f"<li>{html.escape(item)}</li>" for item in llm_analysis.get("insights", []))
+    actions = "".join(f"<li>{html.escape(item)}</li>" for item in llm_analysis.get("actions", []))
+    risks = "".join(f"<li>{html.escape(item)}</li>" for item in llm_analysis.get("risks", []))
+    provider = html.escape(llm_analysis.get("provider", ""))
+    model = html.escape(llm_analysis.get("model", "")) if llm_analysis.get("model") else "default"
+    generated_at = html.escape(llm_analysis.get("generated_at", ""))
+    return (
+        f"{heading_html('h2', 'LLM Deep Analysis', 'llm', 'section-llm')}"
+        f"<p class='section-intro'><strong>{html.escape(llm_analysis.get('headline', ''))}</strong></p>"
+        f"<p class='section-intro'>{html.escape(llm_analysis.get('summary', ''))}</p>"
+        f"<div class='snapshot-grid'>"
+        f"<div class='snapshot-card'><strong>Provider</strong><span>{provider}</span><span>Model: {model}</span><span>{generated_at}</span></div>"
+        "</div>"
+        "<div class='charts-row'>"
+        f"<div class='chart-card'>{block_title_html('Key Insights', 'llm_insights', 'chart-title')}<ul class='mini-list'>{insights or '<li>暂无</li>'}</ul></div>"
+        f"<div class='chart-card'>{block_title_html('Recommended Actions', 'llm_actions', 'chart-title')}<ul class='mini-list'>{actions or '<li>暂无</li>'}</ul></div>"
+        "</div>"
+        f"<div class='project-area'><div class='area-header'><span class='area-name'>Primary Risks</span></div><ul class='mini-list'>{risks or '<li>暂无</li>'}</ul></div>"
+    )
+
+
 def render_quality_score(quality_score: dict) -> str:
     breakdown = quality_score.get("breakdown", {})
     cards = "".join(
