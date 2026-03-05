@@ -362,14 +362,18 @@ def render_chart_rows(data: AnalyzedData, meta: ReportMeta) -> tuple[str, str]:
     claude = data.comparison.get("claude_code", {})
     codex = data.comparison.get("codex_cli", {})
     primary = data.comparison.get(meta.primary_source or "", {})
+    source_name = source_label(meta.primary_source or "")
+    top_tools_title = "Claude Top Tools" if meta.compare_sources else f"{source_name} Top Tools"
+    top_projects_title = "Codex Top Tools" if meta.compare_sources else f"{source_name} Top Projects"
+    top_domains_title = "Claude Top Domains" if meta.compare_sources else f"{source_name} Top Domains"
     first = (
         '<div class="charts-row">'
         '<div class="chart-card">'
-        f"{block_title_html('Claude Top Tools' if meta.compare_sources else f'{source_label(meta.primary_source or '')} Top Tools', 'chart_top_tools', 'chart-title')}"
+        f"{block_title_html(top_tools_title, 'chart_top_tools', 'chart-title')}"
         f"{bar_rows((claude if meta.compare_sources else primary).get('top_tools', []), '#2563eb' if meta.compare_sources else '#f59e0b')}"
         "</div>"
         '<div class="chart-card">'
-        f"{block_title_html('Codex Top Tools' if meta.compare_sources else f'{source_label(meta.primary_source or '')} Top Projects', 'chart_top_projects', 'chart-title')}"
+        f"{block_title_html(top_projects_title, 'chart_top_projects', 'chart-title')}"
         f"{bar_rows((codex if meta.compare_sources else primary).get('top_projects', []), '#f59e0b' if meta.compare_sources else '#16a34a')}"
         "</div>"
         "</div>"
@@ -377,7 +381,7 @@ def render_chart_rows(data: AnalyzedData, meta: ReportMeta) -> tuple[str, str]:
     second = (
         '<div class="charts-row">'
         '<div class="chart-card">'
-        f"{block_title_html('Claude Top Domains' if meta.compare_sources else f'{source_label(meta.primary_source or '')} Top Domains', 'chart_top_domains', 'chart-title')}"
+        f"{block_title_html(top_domains_title, 'chart_top_domains', 'chart-title')}"
         f"{bar_rows((claude if meta.compare_sources else primary).get('top_domains', []), '#0891b2')}"
         "</div>"
         '<div class="chart-card">'

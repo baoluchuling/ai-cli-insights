@@ -17,20 +17,6 @@ from .narrative import build_narrative_bundle, build_project_area_cards
 from .models import NarrativeBundle, PlatformSection, ReportExtras
 
 
-def _split_title_desc(text: str, fallback_title: str) -> tuple[str, str]:
-    raw = str(text).strip()
-    if not raw:
-        return fallback_title, ""
-    for sep in ("：", ":"):
-        if sep in raw:
-            left, right = raw.split(sep, 1)
-            title = left.strip()
-            desc = right.strip()
-            if title and desc:
-                return title, desc
-    return fallback_title, raw
-
-
 def _apply_llm_result(narrative: NarrativeBundle, extras: ReportExtras, llm_analysis: dict | None) -> bool:
     if not llm_analysis or llm_analysis.get("status") != "success":
         return False
@@ -42,10 +28,11 @@ def _apply_llm_result(narrative: NarrativeBundle, extras: ReportExtras, llm_anal
     if not summary or not headline:
         return False
 
-    # Replace core narrative blocks with live LLM output.
+    # Keep deterministic core narrative sections stable.
+    # LLM output is surfaced in glance/recommendations/LLM section, not in "wins".
     narrative.work_intro = summary
-    narrative.wins_intro = "以下亮点由外部 LLM 基于本次数据直接生成。"
-    narrative.friction_intro = "以下风险由外部 LLM 基于本次数据直接生成。"
+    narrative.wins_intro = "以下亮点基于本次统计值自动生成。LLM 洞察请查看下方“LLM 深度分析”。"
+    narrative.friction_intro = "以下风险由统计信号与 LLM 风险洞察共同支持。"
     narrative.glance_sections = [
         f"<strong>LLM 结论：</strong> {headline}",
         f"<strong>LLM 摘要：</strong> {summary}",
@@ -58,11 +45,6 @@ def _apply_llm_result(narrative: NarrativeBundle, extras: ReportExtras, llm_anal
         "p3": risks[0] if risks else summary,
         "key": headline,
     }
-    insight_cards = []
-    for idx, text in enumerate(insights[:3]):
-        title, desc = _split_title_desc(text, f"关键洞察 {idx + 1}")
-        insight_cards.append({"title": title, "desc": desc})
-    narrative.wins = insight_cards or [{"title": "关键洞察", "desc": summary}]
     narrative.friction_cards = [
         {
             "title": f"主要风险 {idx + 1}",
