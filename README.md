@@ -40,6 +40,7 @@ ai-cli-insights --days 7 --tool claude
 The HTML report is saved to the output directory and can be opened in any browser.
 
 By default, `generate` will try deep LLM analysis in this order: `codex -> claude -> gemini`.
+When LLM analysis succeeds, core narrative/recommendation sections are replaced by live model output.
 
 ## Configuration
 

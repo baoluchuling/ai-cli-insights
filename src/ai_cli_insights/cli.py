@@ -14,7 +14,59 @@ from .extras import build_report_extras, snapshot_payload
 from .html_renderer import load_previous_snapshot, render_html, run_self_check, write_report, write_snapshot
 from .llm_analysis import run_llm_analysis
 from .narrative import build_narrative_bundle, build_project_area_cards
-from .models import PlatformSection
+from .models import NarrativeBundle, PlatformSection, ReportExtras
+
+
+def _apply_llm_result(narrative: NarrativeBundle, extras: ReportExtras, llm_analysis: dict | None) -> bool:
+    if not llm_analysis or llm_analysis.get("status") != "success":
+        return False
+    insights = [item for item in llm_analysis.get("insights", []) if str(item).strip()]
+    actions = [item for item in llm_analysis.get("actions", []) if str(item).strip()]
+    risks = [item for item in llm_analysis.get("risks", []) if str(item).strip()]
+    summary = str(llm_analysis.get("summary", "")).strip()
+    headline = str(llm_analysis.get("headline", "")).strip()
+    if not summary or not headline:
+        return False
+
+    # Replace core narrative blocks with live LLM output.
+    narrative.work_intro = summary
+    narrative.wins_intro = "以下亮点由外部 LLM 基于本次数据直接生成。"
+    narrative.friction_intro = "以下风险由外部 LLM 基于本次数据直接生成。"
+    narrative.glance_sections = [
+        f"<strong>LLM headline:</strong> {headline}",
+        f"<strong>LLM summary:</strong> {summary}",
+        f"<strong>Top insights:</strong> {'；'.join(insights[:3]) or '暂无'}",
+        f"<strong>Priority actions:</strong> {'；'.join(actions[:3]) or '暂无'}",
+    ]
+    narrative.usage_narrative = {
+        "p1": insights[0] if len(insights) > 0 else summary,
+        "p2": insights[1] if len(insights) > 1 else (actions[0] if actions else summary),
+        "p3": risks[0] if risks else summary,
+        "key": headline,
+    }
+    narrative.wins = [
+        {"title": f"LLM Insight {idx + 1}", "desc": text}
+        for idx, text in enumerate(insights[:3])
+    ] or [{"title": "LLM Insight", "desc": summary}]
+    narrative.friction_cards = [
+        {
+            "title": f"LLM Risk {idx + 1}",
+            "desc": text,
+            "examples": ["建议把该风险加到阶段检查单里并持续追踪。"],
+        }
+        for idx, text in enumerate(risks[:3])
+    ] or [
+        {
+            "title": "LLM 风险提示",
+            "desc": "本次未识别到明确风险，请结合趋势图继续观察。",
+            "examples": ["保持阶段 checkpoint 与验证门禁。"],
+        }
+    ]
+    extras.platform_recommendations = [
+        {"title": f"LLM Action {idx + 1}", "desc": text}
+        for idx, text in enumerate(actions[:3])
+    ] or extras.platform_recommendations
+    return True
 
 
 def cmd_generate(args: argparse.Namespace) -> None:
@@ -39,6 +91,7 @@ def cmd_generate(args: argparse.Namespace) -> None:
         timeout_sec=args.llm_timeout_sec,
     )
     extras.llm_analysis = llm_analysis
+    llm_applied = _apply_llm_result(narrative, extras, llm_analysis)
     platform_sections: dict[str, PlatformSection] = {}
     if args.tool == "all":
         for tool_name, source in (("claude", "claude_code"), ("codex", "codex_cli")):
@@ -78,6 +131,7 @@ def cmd_generate(args: argparse.Namespace) -> None:
                 "llm_analysis": {
                     "provider": (llm_analysis or {}).get("provider", ""),
                     "status": (llm_analysis or {}).get("status", "disabled"),
+                    "applied_to_core_sections": llm_applied,
                 },
             },
             ensure_ascii=False,
