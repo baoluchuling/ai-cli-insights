@@ -18,6 +18,14 @@ def _session_tone(sessions: int) -> str:
     return "分析层参与度不错，这段可以夸：你在收敛问题上是有持续投入的。"
 
 
+def _wins_session_tone(sessions: int) -> str:
+    if sessions == 0:
+        return "本期样本较少，但已具备后续补样和对照分析的基础。"
+    if sessions < 3:
+        return "已有连续样本，后续继续补样即可放大结论可信度。"
+    return "分析层参与度稳定，收敛质量有持续投入。"
+
+
 def _outcome_tone(achieved: int, not_achieved: int) -> str:
     total = achieved + not_achieved
     if total <= 0:
@@ -51,9 +59,9 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     }
 
     wins = [
-        {"title": "分析层投入", "desc": f"{sessions} 次会话，平均时长 {avg_min} 分钟。{session_tone}"},
+        {"title": "分析层投入", "desc": f"{sessions} 次会话，平均时长 {avg_min} 分钟。{_wins_session_tone(sessions)}"},
         {"title": "任务聚焦度", "desc": f"Top domains: {top_domains}；Top projects: {top_projects}。这块聚焦做得比较清楚。"},
-        {"title": "结果转化率", "desc": f"Outcome：achieved={achieved}，not_achieved={not_achieved}。{outcome_tone}"},
+        {"title": "结果可复盘性", "desc": f"Outcome：achieved={achieved}，not_achieved={not_achieved}。结果数据已形成基础对照，便于持续优化。"},
     ]
 
     top_sessions = data.friction_sessions[:3]

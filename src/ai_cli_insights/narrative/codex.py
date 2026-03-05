@@ -20,6 +20,16 @@ def _execution_tone(sessions: int, long_chain: int) -> str:
     return "执行样本偏少，结论暂时只能保守解读。"
 
 
+def _wins_execution_tone(sessions: int, long_chain: int) -> str:
+    if sessions == 0:
+        return "当前样本量有限，但流程基线已建立，可继续积累。"
+    if sessions >= 6 and long_chain >= 1:
+        return "执行推进力稳定，长链路处理能力可见。"
+    if sessions >= 3:
+        return "执行节奏稳定，后续可继续扩大高价值样本。"
+    return "已有可复盘样本，适合继续按同一协议沉淀。"
+
+
 def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBundle:
     codex = data.comparison.get("codex_cli", {})
     sessions = codex.get("sessions", 0)
@@ -40,9 +50,9 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     }
 
     wins = [
-        {"title": "执行强度", "desc": f"{sessions} 次会话，平均时长 {avg_min} 分钟。{execution_tone}"},
+        {"title": "执行强度", "desc": f"{sessions} 次会话，平均时长 {avg_min} 分钟。{_wins_execution_tone(sessions, long_chain)}"},
         {"title": "工具集中度", "desc": f"Top tools: {top_tools}。这点值得夸，runbook 沉淀基础已经有了。"},
-        {"title": "任务聚焦", "desc": f"Top domains: {top_domains}；Top projects: {top_projects}。方向是清楚的，但仍要防止跨 repo 上下文混线。"},
+        {"title": "任务聚焦", "desc": f"Top domains: {top_domains}；Top projects: {top_projects}。任务主线清晰，后续沉淀 SOP 的抓手明确。"},
     ]
 
     friction_cards = [

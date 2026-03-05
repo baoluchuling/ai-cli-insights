@@ -17,6 +17,20 @@ from .narrative import build_narrative_bundle, build_project_area_cards
 from .models import NarrativeBundle, PlatformSection, ReportExtras
 
 
+def _split_title_desc(text: str, fallback_title: str) -> tuple[str, str]:
+    raw = str(text).strip()
+    if not raw:
+        return fallback_title, ""
+    for sep in ("：", ":"):
+        if sep in raw:
+            left, right = raw.split(sep, 1)
+            title = left.strip()
+            desc = right.strip()
+            if title and desc:
+                return title, desc
+    return fallback_title, raw
+
+
 def _apply_llm_result(narrative: NarrativeBundle, extras: ReportExtras, llm_analysis: dict | None) -> bool:
     if not llm_analysis or llm_analysis.get("status") != "success":
         return False
@@ -33,10 +47,10 @@ def _apply_llm_result(narrative: NarrativeBundle, extras: ReportExtras, llm_anal
     narrative.wins_intro = "以下亮点由外部 LLM 基于本次数据直接生成。"
     narrative.friction_intro = "以下风险由外部 LLM 基于本次数据直接生成。"
     narrative.glance_sections = [
-        f"<strong>LLM headline:</strong> {headline}",
-        f"<strong>LLM summary:</strong> {summary}",
-        f"<strong>Top insights:</strong> {'；'.join(insights[:3]) or '暂无'}",
-        f"<strong>Priority actions:</strong> {'；'.join(actions[:3]) or '暂无'}",
+        f"<strong>LLM 结论：</strong> {headline}",
+        f"<strong>LLM 摘要：</strong> {summary}",
+        f"<strong>关键洞察：</strong> {'；'.join(insights[:3]) or '暂无'}",
+        f"<strong>优先动作：</strong> {'；'.join(actions[:3]) or '暂无'}",
     ]
     narrative.usage_narrative = {
         "p1": insights[0] if len(insights) > 0 else summary,
@@ -44,13 +58,14 @@ def _apply_llm_result(narrative: NarrativeBundle, extras: ReportExtras, llm_anal
         "p3": risks[0] if risks else summary,
         "key": headline,
     }
-    narrative.wins = [
-        {"title": f"LLM Insight {idx + 1}", "desc": text}
-        for idx, text in enumerate(insights[:3])
-    ] or [{"title": "LLM Insight", "desc": summary}]
+    insight_cards = []
+    for idx, text in enumerate(insights[:3]):
+        title, desc = _split_title_desc(text, f"关键洞察 {idx + 1}")
+        insight_cards.append({"title": title, "desc": desc})
+    narrative.wins = insight_cards or [{"title": "关键洞察", "desc": summary}]
     narrative.friction_cards = [
         {
-            "title": f"LLM Risk {idx + 1}",
+            "title": f"主要风险 {idx + 1}",
             "desc": text,
             "examples": ["建议把该风险加到阶段检查单里并持续追踪。"],
         }
@@ -63,7 +78,7 @@ def _apply_llm_result(narrative: NarrativeBundle, extras: ReportExtras, llm_anal
         }
     ]
     extras.platform_recommendations = [
-        {"title": f"LLM Action {idx + 1}", "desc": text}
+        {"title": f"优先动作 {idx + 1}", "desc": text}
         for idx, text in enumerate(actions[:3])
     ] or extras.platform_recommendations
     return True

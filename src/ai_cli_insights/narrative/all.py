@@ -57,7 +57,10 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     wins = [
         {
             "title": "分工清晰",
-            "desc": f"Claude 与 Codex 的时长/消息密度差异明显。{split_tone}",
+            "desc": (
+                f"Claude 与 Codex 的时长/消息密度差异明显。"
+                + ("双侧都有稳定样本，跨工具协作基础已经形成。" if c_sessions > 0 and x_sessions > 0 else "当前已有有效样本，协作框架可继续扩展。")
+            ),
         },
         {
             "title": "任务聚焦",
@@ -65,7 +68,7 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
         },
         {
             "title": "协作基础稳定",
-            "desc": f"Claude Top projects: {claude_projects}；Codex Top projects: {codex_projects}。但如果一侧长期为 0，要优先修复。",
+            "desc": f"Claude Top projects: {claude_projects}；Codex Top projects: {codex_projects}。项目分布可读性不错，便于继续沉淀协作模板。",
         },
     ]
 
