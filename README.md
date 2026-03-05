@@ -58,9 +58,14 @@ Without a config file, reports still work — domains and projects will just sho
 ```bash
 # Install a Claude Code skill for easy /multi-insights access
 ai-cli-insights install-skill
+
+# Install a Codex CLI skill
+ai-cli-insights install-codex-skill
 ```
 
-This writes a `SKILL.md` to `~/.claude/skills/multi-insights/`.
+This writes:
+- Claude Code skill: `~/.claude/skills/multi-insights/SKILL.md`
+- Codex CLI skill: `~/.codex/skills/multi-insights/SKILL.md`
 
 ## CLI Reference
 
@@ -71,6 +76,7 @@ Commands:
   generate        Generate an HTML insights report (default)
   init            Write a config template to the config directory
   install-skill   Install Claude Code skill file
+  install-codex-skill  Install Codex CLI skill file
 
 Generate options:
   --days N        Analyze the last N days (default: 30)

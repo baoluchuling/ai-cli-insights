@@ -118,6 +118,11 @@ def cmd_install_skill(args: argparse.Namespace) -> None:
     install_skill()
 
 
+def cmd_install_codex_skill(args: argparse.Namespace) -> None:
+    from .skills import install_codex_skill
+    install_codex_skill()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="ai-cli-insights",
@@ -146,6 +151,10 @@ def main() -> None:
     # install-skill
     skill = subparsers.add_parser("install-skill", help="Install Claude Code skill file")
     skill.set_defaults(func=cmd_install_skill)
+
+    # install-codex-skill
+    codex_skill = subparsers.add_parser("install-codex-skill", help="Install Codex CLI skill file")
+    codex_skill.set_defaults(func=cmd_install_codex_skill)
 
     args = parser.parse_args()
 

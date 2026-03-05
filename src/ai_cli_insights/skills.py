@@ -1,4 +1,4 @@
-"""Install Claude Code skill file for multi-insights."""
+"""Install skill files for multi-insights."""
 
 from __future__ import annotations
 
@@ -17,6 +17,10 @@ def _get_skill_template() -> str:
 
 
 def install_skill() -> None:
+    install_claude_skill()
+
+
+def _render_skill_content() -> tuple[str, str]:
     # Determine the command name
     command = shutil.which("ai-cli-insights")
     if command:
@@ -26,11 +30,28 @@ def install_skill() -> None:
 
     template = _get_skill_template()
     content = template.replace("{command}", command_str)
+    return content, command_str
+
+
+def install_claude_skill() -> None:
+    content, command_str = _render_skill_content()
 
     skill_dir = Path.home() / ".claude" / "skills" / "multi-insights"
     skill_dir.mkdir(parents=True, exist_ok=True)
     skill_path = skill_dir / "SKILL.md"
 
     skill_path.write_text(content, encoding="utf-8")
-    print(f"Skill installed to {skill_path}")
+    print(f"Claude skill installed to {skill_path}")
+    print(f"Command: {command_str}")
+
+
+def install_codex_skill() -> None:
+    content, command_str = _render_skill_content()
+
+    skill_dir = Path.home() / ".codex" / "skills" / "multi-insights"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    skill_path = skill_dir / "SKILL.md"
+
+    skill_path.write_text(content, encoding="utf-8")
+    print(f"Codex skill installed to {skill_path}")
     print(f"Command: {command_str}")
