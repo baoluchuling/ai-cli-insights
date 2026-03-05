@@ -33,14 +33,14 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     execution_tone = _execution_tone(sessions, long_chain)
 
     usage_narrative = {
-        "p1": f"最近窗口中 Codex 有 {sessions} 个 sessions，平均 {avg_min} 分钟、每个 session {avg_msg} 条用户消息。",
+        "p1": f"最近窗口中 Codex 有 {sessions} 次会话，平均 {avg_min} 分钟、每次会话 {avg_msg} 条用户消息。",
         "p2": f"任务主要集中在 {top_domains}。工具分布 Top 为 {top_tools}，项目分布 Top 为 {top_projects}。",
         "p3": f"执行画像为 {archetype}。其中长链路会话（active>=120 分钟）共 {long_chain} 个。{execution_tone}",
-        "key": f"{execution_tone} 关键改进点是把 {sessions} 个 sessions 的阶段回放做得更稳定。",
+        "key": f"{execution_tone} 关键改进点是把 {sessions} 次会话的阶段回放做得更稳定。",
     }
 
     wins = [
-        {"title": "执行强度", "desc": f"{sessions} 个 sessions，平均时长 {avg_min} 分钟。{execution_tone}"},
+        {"title": "执行强度", "desc": f"{sessions} 次会话，平均时长 {avg_min} 分钟。{execution_tone}"},
         {"title": "工具集中度", "desc": f"Top tools: {top_tools}。这点值得夸，runbook 沉淀基础已经有了。"},
         {"title": "任务聚焦", "desc": f"Top domains: {top_domains}；Top projects: {top_projects}。方向是清楚的，但仍要防止跨 repo 上下文混线。"},
     ]
@@ -48,7 +48,7 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     friction_cards = [
         {
             "title": "阶段回放风险",
-            "desc": f"当前有 {sessions} 个执行 session。若阶段小结不固定，后续回放和交接成本会升高。",
+            "desc": f"当前有 {sessions} 次执行会话。若阶段小结不固定，后续回放和交接成本会升高。",
             "examples": [
                 "每阶段固定输出: 已完成 / 已验证 / 剩余风险 / 下一步。",
                 "跨 repo 任务按 repo 结账，不要混在同一段执行日志里。",
@@ -68,7 +68,7 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
         {
             "title": "阶段小结协议",
             "summary": "把执行过程结构化，降低回放成本。",
-            "detail": f"适用于当前 {sessions} 个 sessions 的执行节奏，优先提升可回放性。",
+            "detail": f"适用于当前 {sessions} 次会话的执行节奏，优先提升可回放性。",
             "starter": "每批改动后立即输出四项小结。",
             "prompt": "每完成一批改动后输出: 已改文件、已验证项、未解决风险、下一步。",
         },
@@ -120,10 +120,10 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
 
     return build_bundle(
         glance_sections=[
-            f"<strong>What's working:</strong> Codex 本期 {sessions} 个 sessions，执行主线稳定。 <a href=\"#section-wins\" class=\"see-more\">Impressive Things You Did →</a>",
-            f"<strong>What's hindering you:</strong> 长链路与跨 repo 任务的阶段回放成本仍高。 <a href=\"#section-friction\" class=\"see-more\">Where Things Go Wrong →</a>",
-            f"<strong>Quick wins to try:</strong> 先落地阶段小结协议与验证前移。 <a href=\"#section-features\" class=\"see-more\">Features to Try →</a>",
-            f"<strong>Ambitious workflows:</strong> 补齐 outcome/friction 后可升级为执行质量闭环。 <a href=\"#section-horizon\" class=\"see-more\">On the Horizon →</a>",
+            f"<strong>当前有效：</strong> Codex 本期 {sessions} 次会话，执行主线稳定。 <a href=\"#section-wins\" class=\"see-more\">查看亮点 →</a>",
+            f"<strong>当前阻碍：</strong> 长链路与跨 repo 任务的阶段回放成本仍高。 <a href=\"#section-friction\" class=\"see-more\">查看问题 →</a>",
+            f"<strong>短期可做：</strong> 先落地阶段小结协议与验证前移。 <a href=\"#section-features\" class=\"see-more\">查看可直接落地动作 →</a>",
+            f"<strong>中长期方向：</strong> 补齐 outcome/friction 后可升级为执行质量闭环。 <a href=\"#section-horizon\" class=\"see-more\">查看后续规划 →</a>",
         ],
         work_intro=f"当前 Codex 工作主要集中在 {top_domains}。重点是执行推进效率与可回放性。",
         usage_narrative=usage_narrative,

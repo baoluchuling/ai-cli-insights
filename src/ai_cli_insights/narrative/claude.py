@@ -44,14 +44,14 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
     outcome_tone = _outcome_tone(achieved, not_achieved)
 
     usage_narrative = {
-        "p1": f"最近窗口中 Claude 有 {sessions} 个 sessions，平均 {avg_min} 分钟、每个 session {avg_msg} 条用户消息。",
+        "p1": f"最近窗口中 Claude 有 {sessions} 次会话，平均 {avg_min} 分钟、每次会话 {avg_msg} 条用户消息。",
         "p2": f"任务主要集中在 {top_domains}。工具分布 Top 为 {top_tools}，项目分布 Top 为 {top_projects}。",
         "p3": f"Outcome 汇总：fully/mostly={achieved}，partially/not={not_achieved}。主要摩擦：{friction_line}。{outcome_tone}",
         "key": f"{session_tone} 重点改进是先证据后结论，减少偏航摩擦。",
     }
 
     wins = [
-        {"title": "分析层投入", "desc": f"{sessions} 个 sessions，平均时长 {avg_min} 分钟。{session_tone}"},
+        {"title": "分析层投入", "desc": f"{sessions} 次会话，平均时长 {avg_min} 分钟。{session_tone}"},
         {"title": "任务聚焦度", "desc": f"Top domains: {top_domains}；Top projects: {top_projects}。这块聚焦做得比较清楚。"},
         {"title": "结果转化率", "desc": f"Outcome：achieved={achieved}，not_achieved={not_achieved}。{outcome_tone}"},
     ]
@@ -135,10 +135,10 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
 
     return build_bundle(
         glance_sections=[
-            f"<strong>What's working:</strong> Claude 本期 {sessions} 个 sessions，分析层角色稳定。 <a href=\"#section-wins\" class=\"see-more\">Impressive Things You Did →</a>",
-            f"<strong>What's hindering you:</strong> 主要摩擦是 {friction_line}。 <a href=\"#section-friction\" class=\"see-more\">Where Things Go Wrong →</a>",
-            f"<strong>Quick wins to try:</strong> 先证据后结论 + 五段式输出。 <a href=\"#section-features\" class=\"see-more\">Features to Try →</a>",
-            f"<strong>Ambitious workflows:</strong> 把摩擦模式持续反写进模板规则。 <a href=\"#section-horizon\" class=\"see-more\">On the Horizon →</a>",
+            f"<strong>当前有效：</strong> Claude 本期 {sessions} 次会话，分析层角色稳定。 <a href=\"#section-wins\" class=\"see-more\">查看亮点 →</a>",
+            f"<strong>当前阻碍：</strong> 主要摩擦是 {friction_line}。 <a href=\"#section-friction\" class=\"see-more\">查看问题 →</a>",
+            f"<strong>短期可做：</strong> 先证据后结论 + 五段式输出。 <a href=\"#section-features\" class=\"see-more\">查看可直接落地动作 →</a>",
+            f"<strong>中长期方向：</strong> 把摩擦模式持续反写进模板规则。 <a href=\"#section-horizon\" class=\"see-more\">查看后续规划 →</a>",
         ],
         work_intro=f"当前 Claude 工作集中在 {top_domains}，重点是判断质量与约束收敛质量。",
         usage_narrative=usage_narrative,

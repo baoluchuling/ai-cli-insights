@@ -40,8 +40,8 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
 
     usage_narrative = {
         "p1": (
-            f"本期 Claude {c_sessions} 个 sessions，平均 {c_avg_min} 分钟、{c_avg_msg} 条消息；"
-            f"Codex {x_sessions} 个 sessions，平均 {x_avg_min} 分钟、{x_avg_msg} 条消息。"
+            f"本期 Claude {c_sessions} 次会话，平均 {c_avg_min} 分钟、{c_avg_msg} 条消息；"
+            f"Codex {x_sessions} 次会话，平均 {x_avg_min} 分钟、{x_avg_msg} 条消息。"
         ),
         "p2": (
             f"跨工具任务主要集中在 {top_domains}。Claude Top tools: {claude_tools}；"
@@ -144,10 +144,10 @@ def build_narrative_bundle(data: AnalyzedData, meta: ReportMeta) -> NarrativeBun
 
     return build_bundle(
         glance_sections=[
-            f"<strong>What's working:</strong> 双工具分工稳定，Claude({c_sessions}) + Codex({x_sessions}) 协作清晰。 <a href=\"#section-wins\" class=\"see-more\">Impressive Things You Did →</a>",
-            f"<strong>What's hindering you:</strong> 当前主要摩擦是 {friction_line}。 <a href=\"#section-friction\" class=\"see-more\">Where Things Go Wrong →</a>",
-            f"<strong>Quick wins to try:</strong> 固化交接模板和阶段门禁。 <a href=\"#section-features\" class=\"see-more\">Features to Try →</a>",
-            f"<strong>Ambitious workflows:</strong> 建立跨工具 quality 闭环。 <a href=\"#section-horizon\" class=\"see-more\">On the Horizon →</a>",
+            f"<strong>当前有效：</strong> 双工具分工稳定，Claude({c_sessions}) + Codex({x_sessions}) 协作清晰。 <a href=\"#section-wins\" class=\"see-more\">查看亮点 →</a>",
+            f"<strong>当前阻碍：</strong> 当前主要摩擦是 {friction_line}。 <a href=\"#section-friction\" class=\"see-more\">查看问题 →</a>",
+            f"<strong>短期可做：</strong> 固化交接模板和阶段门禁。 <a href=\"#section-features\" class=\"see-more\">查看可直接落地动作 →</a>",
+            f"<strong>中长期方向：</strong> 建立跨工具质量闭环。 <a href=\"#section-horizon\" class=\"see-more\">查看后续规划 →</a>",
         ],
         work_intro=f"当前工作集中在 {top_domains}，跨工具价值主要体现在分析-执行协作效率。",
         usage_narrative=usage_narrative,

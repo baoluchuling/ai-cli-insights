@@ -8,26 +8,26 @@ from ..models import ReportMeta
 
 def run_self_check(html_text: str) -> list[str]:
     required = [
-        "At a Glance",
-        "Report Quality Score",
-        "Snapshot Compare",
-        "Key Trends",
-        "Platform Recommendations",
-        "What You Work On",
-        "Where Things Go Wrong",
-        "Project Drill-Down",
-        "High-Value Session Leaderboards",
-        "Prompt Library",
-        "Task Type Recommendation Matrix",
-        "Existing Features to Try",
-        "New Ways to Use These Tools",
-        "On the Horizon",
+        "一眼概览",
+        "报告质量评分",
+        "快照对比",
+        "关键趋势",
+        "平台建议",
+        "你主要在做什么",
+        "问题主要出在哪",
+        "项目下钻",
+        "高价值会话榜单",
+        "提示词库",
+        "任务类型建议矩阵",
+        "可直接尝试的功能",
+        "这些工具的新用法",
+        "后续规划",
         "copyText(",
-        "Copy All Feature Prompts",
-        "Copy All Pattern Prompts",
+        "复制全部功能提示词",
+        "复制全部模式提示词",
     ]
-    if "How You Use These Tools" not in html_text and "How You Use Claude Code" not in html_text and "How You Use Codex CLI" not in html_text:
-        required.append("How You Use")
+    if "你如何使用这些工具" not in html_text and "你如何使用 Claude Code" not in html_text and "你如何使用 Codex CLI" not in html_text:
+        required.append("你如何使用")
     return [item for item in required if item not in html_text]
 
 

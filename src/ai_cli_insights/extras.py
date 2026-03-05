@@ -86,7 +86,7 @@ def build_trend_cards(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
     if meta.tool == "all":
         return [
             {
-                "title": "Sessions Trend",
+                "title": "会话数趋势",
                 "kind": "dual",
                 "default_window": "30d",
                 "windows": _build_trend_windows([
@@ -95,7 +95,7 @@ def build_trend_cards(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
                 ]),
             },
             {
-                "title": "Avg Duration Trend",
+                "title": "平均时长趋势",
                 "kind": "dual",
                 "default_window": "30d",
                 "windows": _build_trend_windows([
@@ -104,7 +104,7 @@ def build_trend_cards(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
                 ]),
             },
             {
-                "title": "Avg Messages Trend",
+                "title": "平均消息数趋势",
                 "kind": "dual",
                 "default_window": "30d",
                 "windows": _build_trend_windows([
@@ -113,7 +113,7 @@ def build_trend_cards(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
                 ]),
             },
             {
-                "title": "Claude Friction Trend",
+                "title": "Claude 摩擦趋势",
                 "kind": "single",
                 "default_window": "30d",
                 "windows": _build_trend_windows([
@@ -122,24 +122,24 @@ def build_trend_cards(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
             },
         ]
     metric = "friction" if meta.tool == "claude" else "active_minutes"
-    fourth_title = "Friction Trend" if meta.tool == "claude" else "Execution Intensity Trend"
+    fourth_title = "摩擦趋势" if meta.tool == "claude" else "执行强度趋势"
     source = meta.primary_source or ""
     label = source_label(source)
     return [
         {
-            "title": "Sessions Trend",
+            "title": "会话数趋势",
             "kind": "single",
             "default_window": "30d",
             "windows": _build_trend_windows([{"name": label, "color": "#2563eb", "points": _aggregate_series(data, source, "sessions")}]),
         },
         {
-            "title": "Avg Duration Trend",
+            "title": "平均时长趋势",
             "kind": "single",
             "default_window": "30d",
             "windows": _build_trend_windows([{"name": label, "color": "#16a34a", "points": _aggregate_series(data, source, "avg_duration")}]),
         },
         {
-            "title": "Avg Messages Trend",
+            "title": "平均消息数趋势",
             "kind": "single",
             "default_window": "30d",
             "windows": _build_trend_windows([{"name": label, "color": "#0891b2", "points": _aggregate_series(data, source, "avg_messages")}]),
@@ -209,11 +209,11 @@ def build_leaderboards(data: AnalyzedData, meta: ReportMeta) -> list[dict]:
     longest.sort(key=lambda item: item[1], reverse=True)
     highest_friction.sort(key=lambda item: item[1], reverse=True)
     boards = [
-        {"title": "Most Reusable Sessions", "items": [{"label": label, "value": score} for label, score in stable[:5]]},
-        {"title": "Longest Chain Sessions", "items": [{"label": label, "value": value} for label, value in longest[:5]]},
+        {"title": "最可复用会话", "items": [{"label": label, "value": score} for label, score in stable[:5]]},
+        {"title": "最长链路会话", "items": [{"label": label, "value": value} for label, value in longest[:5]]},
     ]
     if meta.tool != "codex":
-        boards.append({"title": "Highest Friction Sessions", "items": [{"label": label, "value": value} for label, value in highest_friction[:5]]})
+        boards.append({"title": "最高摩擦会话", "items": [{"label": label, "value": value} for label, value in highest_friction[:5]]})
     return boards
 
 
@@ -285,7 +285,7 @@ def _build_cost_signal(data: AnalyzedData, meta: ReportMeta) -> dict:
         else "本窗口未检测到可计量 token。"
     )
     return {
-        "title": "Token Cost Signal",
+        "title": "Token 成本信号",
         "summary": summary,
         "bullets": bullets,
     }
@@ -330,7 +330,7 @@ def _build_drift_signal(data: AnalyzedData, meta: ReportMeta) -> dict:
     else:
         summary = "暂无会话样本，无法评估目标漂移。"
     return {
-        "title": "Goal Drift Signal",
+        "title": "目标漂移信号",
         "summary": summary,
         "bullets": bullets,
     }
@@ -366,12 +366,12 @@ def _build_asset_signal(data: AnalyzedData, meta: ReportMeta) -> dict:
     if not bullets:
         bullets.append("可复用资产信号偏弱，建议先稳定记录项目与提示词。")
     summary = (
-        f"Top2 项目覆盖 {top2_cover}/{total} sessions（{cover_ratio}%），已有资产化空间。"
+        f"Top2 项目覆盖 {top2_cover}/{total} 次会话（{cover_ratio}%），已有资产化空间。"
         if total
         else "暂无会话样本，无法识别可复用资产。"
     )
     return {
-        "title": "Reusable Assets Signal",
+        "title": "可复用资产信号",
         "summary": summary,
         "bullets": bullets,
     }
@@ -462,7 +462,7 @@ def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list
         avg_min = claude.get("avg_duration_min", 0)
         top_tools = ", ".join(f"{name}({cnt})" for name, cnt in (claude.get("top_tools") or [])[:3]) or "暂无"
         cards = [
-            {"title": "分析层持续使用", "desc": f"本期 Claude {sessions} 个 sessions，平均 {avg_min} 分钟、{avg_msg} 条消息，适合继续承担分析与收敛。"},
+            {"title": "分析层持续使用", "desc": f"本期 Claude {sessions} 次会话，平均 {avg_min} 分钟、{avg_msg} 条消息，适合继续承担分析与收敛。"},
             {"title": "结构化输出优先", "desc": f"当前 Top tools 为 {top_tools}，建议将输出固定为结论/证据/风险/建议/验证。"},
             {"title": "强化交接清单", "desc": "将 Claude 结论转为执行清单后交给执行层，可降低跨工具返工。"},
         ]
@@ -474,7 +474,7 @@ def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list
         avg_min = codex.get("avg_duration_min", 0)
         top_tools = ", ".join(f"{name}({cnt})" for name, cnt in (codex.get("top_tools") or [])[:3]) or "暂无"
         cards = [
-            {"title": "执行层持续使用", "desc": f"本期 Codex {sessions} 个 sessions，平均 {avg_min} 分钟、{avg_msg} 条消息，执行角色明确。"},
+            {"title": "执行层持续使用", "desc": f"本期 Codex {sessions} 次会话，平均 {avg_min} 分钟、{avg_msg} 条消息，执行角色明确。"},
             {"title": "阶段协议优先", "desc": f"Top tools 为 {top_tools}，建议每批改动后固定输出阶段小结。"},
             {"title": "验证门禁前移", "desc": "每批改动后先做 analyze/关键检查，再进入下一批，可降低长链路返工。"},
         ]
@@ -485,7 +485,7 @@ def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list
     c_avg_msg = claude.get("avg_user_messages", 0)
     x_avg_msg = codex.get("avg_user_messages", 0)
     cards = [
-        {"title": "保持双层分工", "desc": f"本期 sessions: Claude {c_sessions} / Codex {x_sessions}，角色分工已具备数据支撑。"},
+        {"title": "保持双层分工", "desc": f"本期会话: Claude {c_sessions} / Codex {x_sessions}，角色分工已具备数据支撑。"},
         {"title": "按消息密度分配角色", "desc": f"每 session 消息数: Claude {c_avg_msg} / Codex {x_avg_msg}，建议继续分析-执行拆分。"},
         {"title": "优先优化交接质量", "desc": "将目标、边界、验证命令作为固定交接字段，可提升跨工具稳定性。"},
     ]
@@ -495,13 +495,13 @@ def build_platform_recommendations(data: AnalyzedData, meta: ReportMeta) -> list
 
 def build_prompt_library(narrative: NarrativeBundle, meta: ReportMeta) -> dict[str, list[dict]]:
     library = {
-        "Features": [{"title": item["title"], "prompt": item["prompt"]} for item in narrative.feature_cards],
-        "Patterns": [{"title": item["title"], "prompt": item["prompt"]} for item in narrative.pattern_cards],
+        "功能动作": [{"title": item["title"], "prompt": item["prompt"]} for item in narrative.feature_cards],
+        "模式动作": [{"title": item["title"], "prompt": item["prompt"]} for item in narrative.pattern_cards],
     }
     if meta.tool == "all":
-        library["Handoff"] = [
+        library["交接模板"] = [
             {
-                "title": "Claude -> Codex Handoff",
+                "title": "Claude -> Codex 交接模板",
                 "prompt": "先让 Claude 输出目标 repo、参考实现、改动边界、验证命令。确认后，把同一份清单完整交给 Codex 执行，并要求每个阶段输出已完成、已验证、剩余风险、下一步。",
             }
         ]

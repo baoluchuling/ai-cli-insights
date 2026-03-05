@@ -26,7 +26,7 @@ def build_project_area_cards(data: AnalyzedData, meta: ReportMeta) -> list[dict]
                 "name": domain,
                 "count": count,
                 "desc": (
-                    f"{domain} 在当前窗口共 {count} 个 sessions。"
+                    f"{domain} 在当前窗口共 {count} 次会话。"
                     f"分布为 Claude {claude_count} / Codex {codex_count}，"
                     f"主导侧: {dominant}。"
                 ),

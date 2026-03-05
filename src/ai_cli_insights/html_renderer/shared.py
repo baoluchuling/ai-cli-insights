@@ -11,7 +11,7 @@ SECTION_GUIDES = {
     "snapshot": "这一段看的是和上一份快照相比发生了什么变化。适合先判断最近是更集中、更分散，还是只是样本波动。",
     "trends": "这里看时间序列，而不是单点数值。优先关注趋势方向、峰值出现在哪段时间，以及两个平台之间的差距是在扩大还是收敛。",
     "operational": "这里是运营信号层：成本、目标漂移、可复用资产。它回答的是“要不要改流程”，不是“改哪一行代码”。",
-    "trend_card": "单张趋势卡用来观察一个指标在不同时间窗口里的变化。先看 latest，再看 peak，最后看和另一条线的 gap 是否稳定。",
+    "trend_card": "单张趋势卡用来观察一个指标在不同时间窗口里的变化。先看当前值，再看峰值，最后看和另一条线的差值是否稳定。",
     "recommendations": "这一段是把统计和叙事压缩成可执行建议。阅读时重点看哪些建议能直接改你的工作流，而不是把它当成泛泛而谈的总结。",
     "work": "这里回答你主要把模型用在哪些项目和领域。重点不是项目名本身，而是哪些工作类型最占时间、最值得优化。",
     "usage": "这一段是叙事型总结，解释你实际是怎么委托模型工作的。适合用来判断你的提示方式、分工方式和控制方式是否稳定。",
@@ -414,7 +414,7 @@ def sparkline_svg(series: list[dict], width: int = 320, height: int = 96) -> str
         label_y = max(peak_point["y"] - 8, padding_top + 10)
         annotations.append(
             f'<text class="trend-annotation" x="{peak_point["x"]}" y="{label_y}" text-anchor="middle" fill="{item["color"]}">'
-            f'{html.escape(item["name"])} peak {format_metric(peak_point["value"])}'
+            f'{html.escape(item["name"])} 峰值 {format_metric(peak_point["value"])}'
             "</text>"
         )
         latest_point = point_geometry[-1]
@@ -422,7 +422,7 @@ def sparkline_svg(series: list[dict], width: int = 320, height: int = 96) -> str
         latest_label_x = latest_point["x"] - 4
         annotations.append(
             f'<text class="trend-latest-label" x="{latest_label_x}" y="{round(latest_label_y, 2)}" text-anchor="end" fill="{item["color"]}">'
-            f'Latest {format_metric(latest_point["value"])}'
+            f'当前 {format_metric(latest_point["value"])}'
             "</text>"
         )
         for point in point_geometry:

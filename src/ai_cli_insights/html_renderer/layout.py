@@ -43,7 +43,7 @@ def scope_section_ids(html_text: str, anchor_prefix: str) -> str:
 
 
 def render_single_platform_block(section: PlatformSection, anchor_prefix: str = "") -> str:
-    usage_heading = f"How You Use {source_label(section.meta.primary_source or '')}"
+    usage_heading = f"你如何使用 {source_label(section.meta.primary_source or '')}"
     comparison_html = build_comparison_table(section.data, section.meta)
     period_html = build_period_section(section.period_comparison, section.meta)
     project_html = render_project_cards(section.project_cards, section.meta.tool)
@@ -85,13 +85,13 @@ def render_single_platform_block(section: PlatformSection, anchor_prefix: str = 
         f"{operational_html}"
         f"{recommendation_html}"
         f"{llm_analysis_html}"
-        f"{heading_html('h3', 'What You Work On', 'work', anchor('work'))}"
+        f"{heading_html('h3', '你主要在做什么', 'work', anchor('work'))}"
         f"<p class=\"section-intro\">{html.escape(section.narrative.work_intro)}</p>"
         f"<div class=\"project-areas\">{project_html}</div>"
         f"{drilldown_html}"
         f"{heading_html('h3', usage_heading, 'usage', anchor('usage'))}"
         f"{usage_block_html}"
-        f"{heading_html('h3', 'Usage Snapshot', 'usage_snapshot', anchor('compare'))}"
+        f"{heading_html('h3', '使用快照', 'usage_snapshot', anchor('compare'))}"
         "<table class=\"comparison-table\">"
         f"<thead><tr><th>维度</th><th>{source_label(section.meta.primary_source or '')}</th></tr></thead>"
         f"<tbody>{comparison_html}</tbody></table>"
@@ -99,22 +99,22 @@ def render_single_platform_block(section: PlatformSection, anchor_prefix: str = 
         f"{focus_block}"
         f"{chart_block}"
         f"{extra_detail}"
-        f"{heading_html('h3', 'Impressive Things', 'wins', anchor('wins'))}"
+        f"{heading_html('h3', '做得好的地方', 'wins', anchor('wins'))}"
         f"<p class=\"section-intro\">{html.escape(section.narrative.wins_intro)}</p>"
         f"<div class=\"big-wins\">{wins_html}</div>"
-        f"{heading_html('h3', 'Where Things Go Wrong', 'friction', anchor('friction'))}"
+        f"{heading_html('h3', '问题主要出在哪', 'friction', anchor('friction'))}"
         f"<p class=\"section-intro\">{html.escape(section.narrative.friction_intro)}</p>"
         f"<div class=\"friction-categories\">{friction_html}</div>"
         f"{leaderboard_html}"
         f"{matrix_html}"
         f"{library_html}"
-        f"{heading_html('h3', 'Existing Features to Try', 'features', anchor('features'))}"
+        f"{heading_html('h3', '可直接尝试的功能', 'features', anchor('features'))}"
         f"<p class=\"section-intro\">{html.escape(section.narrative.feature_intro)}</p>"
-        f"<div class=\"features-section {feature_section_class}\"><button class=\"copy-all-btn\" onclick=\"copyAllPrompts('{feature_section_class}')\">Copy All Feature Prompts</button>{feature_html}</div>"
-        f"{heading_html('h3', 'New Ways to Use These Tools', 'patterns', anchor('patterns'))}"
+        f"<div class=\"features-section {feature_section_class}\"><button class=\"copy-all-btn\" onclick=\"copyAllPrompts('{feature_section_class}')\">复制全部功能提示词</button>{feature_html}</div>"
+        f"{heading_html('h3', '新的使用模式', 'patterns', anchor('patterns'))}"
         + (f'<p class="section-intro">{html.escape(section.narrative.pattern_intro)}</p>' if section.narrative.pattern_intro else "")
-        + f"<div class=\"patterns-section {pattern_section_class}\"><button class=\"copy-all-btn\" onclick=\"copyAllPrompts('{pattern_section_class}')\">Copy All Pattern Prompts</button>{pattern_html}</div>"
-        f"{heading_html('h3', 'On the Horizon', 'horizon', anchor('horizon'))}"
+        + f"<div class=\"patterns-section {pattern_section_class}\"><button class=\"copy-all-btn\" onclick=\"copyAllPrompts('{pattern_section_class}')\">复制全部模式提示词</button>{pattern_html}</div>"
+        f"{heading_html('h3', '后续规划', 'horizon', anchor('horizon'))}"
         f"<p class=\"section-intro\">{html.escape(section.narrative.horizon_intro)}</p>"
         f"<div class=\"horizon-section\">{horizon_html}</div>"
     )
@@ -133,7 +133,7 @@ def render_html(
     period = data.raw.get("stats", {}).get("period", {})
     total_sessions = sum(source.get("sessions", 0) for source in data.comparison.values())
     total_msgs = total_user_messages(data.raw)
-    usage_heading = "How You Use These Tools" if meta.tool == "all" else f"How You Use {source_label(meta.primary_source or '')}"
+    usage_heading = "你如何使用这些工具" if meta.tool == "all" else f"你如何使用 {source_label(meta.primary_source or '')}"
     comparison_html = build_comparison_table(data, meta)
     period_html = build_period_section(period_comparison, meta)
     project_html = render_project_cards(project_cards, meta.tool)
@@ -165,15 +165,15 @@ def render_html(
             '<div class="scenario-card">'
             f'<div class="scenario-title">{title_with_help("什么时候该看哪份报告", "scenario_card")}</div>'
             '<div class="scenario-grid">'
-            '<div class="scenario-item"><strong>看 Cross-Tool</strong><span>当你想一次看完整跨平台工作流、工具分工、全局趋势，以及两个平台的深度报告时，用这份总报告。</span></div>'
-            '<div class="scenario-item"><strong>看 Claude-Only</strong><span>当你只想判断 Claude 这边的分析质量、摩擦模式、review 习惯和提示词约束时，用单平台报告更直接。</span></div>'
-            '<div class="scenario-item"><strong>看 Codex-Only</strong><span>当你只想看执行层、阶段推进、施工画像和可回放性问题时，用单平台报告更聚焦。</span></div>'
+            '<div class="scenario-item"><strong>看跨工具总览</strong><span>当你想一次看完整跨平台工作流、工具分工、全局趋势，以及两个平台的深度报告时，用这份总报告。</span></div>'
+            '<div class="scenario-item"><strong>看 Claude 单平台</strong><span>当你只想判断 Claude 这边的分析质量、摩擦模式、review 习惯和提示词约束时，用单平台报告更直接。</span></div>'
+            '<div class="scenario-item"><strong>看 Codex 单平台</strong><span>当你只想看执行层、阶段推进、施工画像和可回放性问题时，用单平台报告更聚焦。</span></div>'
             '</div>'
             '</div>'
         )
         claude_platform_html = (
             '<details class="platform-details" id="section-claude-report">'
-            f'<summary>{title_with_help("Claude Platform Report", "claude_platform")}<span class="platform-summary-sub">展开查看完整 Claude-only 深度报告，用来回答判断层、review、证据链和 friction 的问题。</span></summary>'
+            f'<summary>{title_with_help("Claude 平台报告", "claude_platform")}<span class="platform-summary-sub">展开查看完整 Claude-only 深度报告，用来回答判断层、review、证据链和 friction 的问题。</span></summary>'
             '<div class="platform-details-body">'
             f"{render_single_platform_block(platform_sections['claude'], 'claude-')}"
             '</div>'
@@ -181,7 +181,7 @@ def render_html(
         )
         codex_platform_html = (
             '<details class="platform-details" id="section-codex-report">'
-            f'<summary>{title_with_help("Codex Platform Report", "codex_platform")}<span class="platform-summary-sub">展开查看完整 Codex-only 深度报告，用来回答执行层、阶段推进、施工画像和回放能力的问题。</span></summary>'
+            f'<summary>{title_with_help("Codex 平台报告", "codex_platform")}<span class="platform-summary-sub">展开查看完整 Codex-only 深度报告，用来回答执行层、阶段推进、施工画像和回放能力的问题。</span></summary>'
             '<div class="platform-details-body">'
             f"{render_single_platform_block(platform_sections['codex'], 'codex-')}"
             '</div>'
@@ -202,23 +202,23 @@ def render_html(
         single_body = render_single_platform_block(single_section)
         single_nav = (
             '<a href="#section-quality">Quality</a>'
-            '<a href="#section-snapshot">Snapshot</a>'
-            '<a href="#section-trends">Trends</a>'
-            '<a href="#section-operational">Signals</a>'
-            '<a href="#section-recommendations">Recommendations</a>'
-            '<a href="#section-llm">LLM</a>'
-            '<a href="#work">What You Work On</a>'
-            '<a href="#usage">Usage</a>'
-            '<a href="#compare">Snapshot</a>'
-            '<a href="#wins">Wins</a>'
-            '<a href="#friction">Friction</a>'
-            '<a href="#section-projects">Projects</a>'
-            '<a href="#section-leaderboards">Leaderboards</a>'
-            '<a href="#section-matrix">Task Matrix</a>'
-            '<a href="#section-library">Prompt Library</a>'
-            '<a href="#features">Features</a>'
-            '<a href="#patterns">Patterns</a>'
-            '<a href="#horizon">Horizon</a>'
+            '<a href="#section-snapshot">快照对比</a>'
+            '<a href="#section-trends">趋势</a>'
+            '<a href="#section-operational">运营信号</a>'
+            '<a href="#section-recommendations">建议</a>'
+            '<a href="#section-llm">LLM分析</a>'
+            '<a href="#work">工作内容</a>'
+            '<a href="#usage">使用叙事</a>'
+            '<a href="#compare">使用快照</a>'
+            '<a href="#wins">亮点</a>'
+            '<a href="#friction">问题</a>'
+            '<a href="#section-projects">项目下钻</a>'
+            '<a href="#section-leaderboards">榜单</a>'
+            '<a href="#section-matrix">任务矩阵</a>'
+            '<a href="#section-library">提示词库</a>'
+            '<a href="#features">功能动作</a>'
+            '<a href="#patterns">模式动作</a>'
+            '<a href="#horizon">后续规划</a>'
         )
         return dedent(
             f"""\
@@ -235,8 +235,8 @@ def render_html(
             <body class="report-mode-{meta.tool}">
               <div class="container">
                 <h1>{title_with_help(meta.title, 'report_title')}</h1>
-                <p class="subtitle">{html.escape(meta.subtitle_prefix)} | {total_msgs} 条用户消息，覆盖 {total_sessions} 个 sessions | {period.get('from', '')} 到 {period.get('to', '')} | 分析模型: {html.escape(meta.analyst_label)}</p>
-                <div class="at-a-glance"><div class="glance-title">{title_with_help('At a Glance', 'at_a_glance')}</div><div class="glance-sections">{glance_html}</div></div>
+                <p class="subtitle">{html.escape(meta.subtitle_prefix)} | {total_msgs} 条用户消息，覆盖 {total_sessions} 次会话 | {period.get('from', '')} 到 {period.get('to', '')} | 分析模型: {html.escape(meta.analyst_label)}</p>
+                <div class="at-a-glance"><div class="glance-title">{title_with_help('一眼概览', 'at_a_glance')}</div><div class="glance-sections">{glance_html}</div></div>
                 <nav class="nav-toc">{single_nav}</nav>
                 {single_body}
                 <div class="fun-ending">
@@ -267,30 +267,30 @@ def render_html(
         <body class="report-mode-{meta.tool}">
           <div class="container">
             <h1>{title_with_help(meta.title, 'report_title')}</h1>
-            <p class="subtitle">{html.escape(meta.subtitle_prefix)} | {total_msgs} 条用户消息，覆盖 {total_sessions} 个 sessions | {period.get('from', '')} 到 {period.get('to', '')} | 分析模型: {html.escape(meta.analyst_label)}</p>
-            <div class="at-a-glance"><div class="glance-title">{title_with_help('At a Glance', 'at_a_glance')}</div><div class="glance-sections">{glance_html}</div></div>
+            <p class="subtitle">{html.escape(meta.subtitle_prefix)} | {total_msgs} 条用户消息，覆盖 {total_sessions} 次会话 | {period.get('from', '')} 到 {period.get('to', '')} | 分析模型: {html.escape(meta.analyst_label)}</p>
+            <div class="at-a-glance"><div class="glance-title">{title_with_help('一眼概览', 'at_a_glance')}</div><div class="glance-sections">{glance_html}</div></div>
             {scenario_card_html}
             <nav class="nav-toc">
               <a href="#section-quality">Quality</a>
-              <a href="#section-snapshot">Snapshot</a>
-              <a href="#section-trends">Trends</a>
-              <a href="#section-operational">Signals</a>
-              <a href="#section-recommendations">Recommendations</a>
-              <a href="#section-llm">LLM</a>
-              <a href="#section-work">What You Work On</a>
+              <a href="#section-snapshot">快照对比</a>
+              <a href="#section-trends">趋势</a>
+              <a href="#section-operational">运营信号</a>
+              <a href="#section-recommendations">建议</a>
+              <a href="#section-llm">LLM分析</a>
+              <a href="#section-work">工作内容</a>
               <a href="#section-usage">{html.escape(usage_heading)}</a>
-              <a href="#section-compare">Usage Comparison</a>
-              <a href="#section-period">Period over Period</a>
-              <a href="#section-wins">Impressive Things</a>
-              <a href="#section-friction">Where Things Go Wrong</a>
-              <a href="#section-projects">Projects</a>
-              <a href="#section-leaderboards">Leaderboards</a>
-              <a href="#section-matrix">Task Matrix</a>
-              <a href="#section-library">Prompt Library</a>
-              <a href="#section-features">Features to Try</a>
-              <a href="#section-patterns">New Usage Patterns</a>
-              <a href="#section-horizon">On the Horizon</a>
-              {'<a href="#section-claude-report">Claude Report</a><a href="#section-codex-report">Codex Report</a>' if meta.tool == 'all' else ''}
+              <a href="#section-compare">使用对比</a>
+              <a href="#section-period">周期对比</a>
+              <a href="#section-wins">亮点</a>
+              <a href="#section-friction">问题</a>
+              <a href="#section-projects">项目下钻</a>
+              <a href="#section-leaderboards">榜单</a>
+              <a href="#section-matrix">任务矩阵</a>
+              <a href="#section-library">提示词库</a>
+              <a href="#section-features">可尝试功能</a>
+              <a href="#section-patterns">新模式</a>
+              <a href="#section-horizon">后续规划</a>
+              {'<a href="#section-claude-report">Claude 报告</a><a href="#section-codex-report">Codex 报告</a>' if meta.tool == 'all' else ''}
             </nav>
             <div class="stats-row">{stats_row_html}</div>
             {quality_html}
@@ -299,13 +299,13 @@ def render_html(
             {operational_html}
             {recommendation_html}
             {llm_analysis_html}
-            {heading_html('h2', 'What You Work On', 'work', 'section-work')}
+            {heading_html('h2', '你主要在做什么', 'work', 'section-work')}
             <p class="section-intro">{html.escape(narrative.work_intro)}</p>
             <div class="project-areas">{project_html}</div>
             {drilldown_html}
             {heading_html('h2', usage_heading, 'usage', 'section-usage')}
             {usage_block_html}
-            {heading_html('h2', 'Usage Comparison', 'compare', 'section-compare')}
+            {heading_html('h2', '使用对比', 'compare', 'section-compare')}
             <table class="comparison-table">
               <thead><tr><th>维度</th><th>{'Claude Code' if meta.compare_sources else source_label(meta.primary_source or '')}</th>{'<th>Codex CLI</th>' if meta.compare_sources else ''}</tr></thead>
               <tbody>{comparison_html}</tbody>
@@ -314,10 +314,10 @@ def render_html(
             {first_chart_row}
             {second_chart_row}
             <div class="project-areas">{archetype_html if archetype_html else ''}</div>
-            {heading_html('h2', 'Impressive Things You Did', 'wins', 'section-wins')}
+            {heading_html('h2', '你做得好的地方', 'wins', 'section-wins')}
             <p class="section-intro">{html.escape(narrative.wins_intro)}</p>
             <div class="big-wins">{wins_html}</div>
-            {heading_html('h2', 'Where Things Go Wrong', 'friction', 'section-friction')}
+            {heading_html('h2', '问题主要出在哪', 'friction', 'section-friction')}
             <p class="section-intro">{html.escape(narrative.friction_intro)}</p>
             <div class="friction-categories">{friction_html}</div>
             {friction_detail_html}
@@ -326,19 +326,19 @@ def render_html(
             {library_html}
             {claude_platform_html if meta.tool == 'all' else ''}
             {codex_platform_html if meta.tool == 'all' else ''}
-            {heading_html('h2', 'Existing Features to Try', 'features', 'section-features')}
+            {heading_html('h2', '可直接尝试的功能', 'features', 'section-features')}
             <p class="section-intro">{html.escape(narrative.feature_intro)}</p>
             <div class="features-section">
-              <button class="copy-all-btn" onclick="copyAllPrompts('features-section')">Copy All Feature Prompts</button>
+              <button class="copy-all-btn" onclick="copyAllPrompts('features-section')">复制全部功能提示词</button>
               {feature_html}
             </div>
-            {heading_html('h2', 'New Ways to Use These Tools', 'patterns', 'section-patterns')}
+            {heading_html('h2', '这些工具的新用法', 'patterns', 'section-patterns')}
             {f'<p class="section-intro">{html.escape(narrative.pattern_intro)}</p>' if narrative.pattern_intro else ''}
             <div class="patterns-section">
-              <button class="copy-all-btn" onclick="copyAllPrompts('patterns-section')">Copy All Pattern Prompts</button>
+              <button class="copy-all-btn" onclick="copyAllPrompts('patterns-section')">复制全部模式提示词</button>
               {pattern_html}
             </div>
-            {heading_html('h2', 'On the Horizon', 'horizon', 'section-horizon')}
+            {heading_html('h2', '后续规划', 'horizon', 'section-horizon')}
             <p class="section-intro">{html.escape(narrative.horizon_intro)}</p>
             <div class="horizon-section">{horizon_html}</div>
             <div class="fun-ending">
